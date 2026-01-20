@@ -36,12 +36,11 @@ export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { projects, workflows, documents } = useStore();
-  const [showStartWorkflow, setShowStartWorkflow] = useState(false);
   
   const project = projects.find(p => p.id === id);
   const projectWorkflows = workflows.filter(w => w.projectId === id);
   const projectDocuments = documents.filter(d => d.projectId === id);
-
+  
   useEffect(() => {
     if (project) {
       useStore.getState().setCurrentProject(project);

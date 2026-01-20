@@ -5,7 +5,6 @@ import {
   TrendingDown,
   DollarSign,
   ShoppingCart,
-  Eye,
   MousePointer,
   Calendar
 } from 'lucide-react';
@@ -24,8 +23,6 @@ import {
   AreaChart
 } from 'recharts';
 import { mockMetrics } from '@/data/mockData';
-import { format } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
 
 export default function Analytics() {
   const { projects } = useStore();

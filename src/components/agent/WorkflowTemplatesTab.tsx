@@ -18,6 +18,7 @@ const stepTypeLabels: Record<string, string> = {
   validation: '验证',
   submission: '提交',
   notification: '通知',
+  evaluation: '评估',
 };
 
 export default function WorkflowTemplatesTab() {

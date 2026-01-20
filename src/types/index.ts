@@ -228,7 +228,7 @@ export interface WorkflowStepTemplate {
   id: string;
   name: string;
   description: string;
-  type: 'analysis' | 'generation' | 'validation' | 'submission' | 'notification';
+  type: 'analysis' | 'generation' | 'validation' | 'submission' | 'notification' | 'evaluation';
   estimatedDuration: number; // seconds
   promptTemplate?: string; // prompt template id
   requiresHumanInput?: boolean;

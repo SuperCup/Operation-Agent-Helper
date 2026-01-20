@@ -20,7 +20,7 @@ import { StepStatus } from '@/types';
 export default function WorkflowExecution() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { workflows, currentWorkflow, setCurrentWorkflow, updateWorkflow, updateWorkflowStep, addAgentMessage, agentMessages, projects } = useStore();
+  const { workflows, setCurrentWorkflow, updateWorkflow, updateWorkflowStep, addAgentMessage, agentMessages, projects } = useStore();
   const [isRunning, setIsRunning] = useState(false);
   const [humanInput, setHumanInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
