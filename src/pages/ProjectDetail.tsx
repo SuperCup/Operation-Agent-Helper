@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 
 const phaseLabels: Record<string, string> = {
   preparation: '项目准备',

@@ -23,6 +23,7 @@ import {
   AreaChart
 } from 'recharts';
 import { mockMetrics } from '@/data/mockData';
+import { format } from 'date-fns';
 
 export default function Analytics() {
   const { projects } = useStore();
