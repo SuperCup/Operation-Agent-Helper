@@ -19,19 +19,28 @@
    - 实时执行日志与进度追踪
    - 异常处理与人工介入提醒
 
-3. **知识库系统**
+3. **Agent管理中心** ⭐ NEW
+   - **AI模型管理**：支持OpenAI、Anthropic、Google等多种模型
+   - **模型配置**：可调节Temperature、Max Tokens等参数
+   - **Agent配置**：为不同阶段配置专属Agent
+   - **提示词库**：管理和调试提示词模板
+   - **在线测试**：实时测试提示词效果，查看Token消耗
+   - **工作流模板**：可复用的工作流模板管理
+   - **性能统计**：查看使用次数、成功率等指标
+
+4. **知识库系统**
    - 优秀运营案例沉淀
    - 历史投放数据分析
    - 智能案例推荐
    - ROI性能指标展示
 
-4. **数据分析看板**
+5. **数据分析看板**
    - 多维度数据可视化
    - GMV、ROI、转化率等核心指标
    - 趋势分析与同比对比
    - AI数据洞察建议
 
-5. **文档管理中心**
+6. **文档管理中心**
    - AI自动生成运营文档
    - 多版本管理
    - 在线预览与编辑
@@ -88,6 +97,12 @@ npm run preview
 \`\`\`
 src/
 ├── components/          # 可复用组件
+│   ├── agent/          # Agent管理组件 ⭐ NEW
+│   │   ├── ModelsTab.tsx          # AI模型管理
+│   │   ├── AgentConfigTab.tsx     # Agent配置
+│   │   ├── PromptsTab.tsx         # 提示词管理
+│   │   ├── PromptTestModal.tsx    # 提示词测试
+│   │   └── WorkflowTemplatesTab.tsx  # 工作流模板
 │   ├── Layout.tsx      # 主布局
 │   ├── CreateProjectModal.tsx
 │   └── DocumentPreviewModal.tsx
@@ -96,13 +111,15 @@ src/
 │   ├── Projects.tsx    # 项目管理
 │   ├── ProjectDetail.tsx
 │   ├── WorkflowExecution.tsx  # AI工作流执行
+│   ├── AgentManagement.tsx    # Agent管理 ⭐ NEW
 │   ├── Documents.tsx   # 文档中心
 │   ├── Knowledge.tsx   # 知识库
 │   └── Analytics.tsx   # 数据分析
 ├── store/              # 状态管理
 │   └── useStore.ts
 ├── data/               # 模拟数据
-│   └── mockData.ts
+│   ├── mockData.ts
+│   └── agentData.ts    # Agent相关数据 ⭐ NEW
 ├── types/              # TypeScript类型定义
 │   └── index.ts
 ├── App.tsx             # 根组件
