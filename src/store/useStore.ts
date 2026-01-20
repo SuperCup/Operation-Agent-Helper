@@ -1,6 +1,24 @@
 import { create } from 'zustand';
-import { Project, Workflow, Document, KnowledgeItem, AgentMessage } from '@/types';
+import { 
+  Project, 
+  Workflow, 
+  Document, 
+  KnowledgeItem, 
+  AgentMessage,
+  AIModel,
+  AgentConfig,
+  PromptTemplate,
+  WorkflowTemplate,
+  PromptTestResult
+} from '@/types';
 import { mockProjects, mockWorkflows, mockDocuments, mockKnowledge } from '@/data/mockData';
+import { 
+  mockModels, 
+  mockAgentConfigs, 
+  mockPromptTemplates, 
+  mockWorkflowTemplates,
+  mockTestResults
+} from '@/data/agentData';
 
 interface AppState {
   // 项目管理
@@ -33,6 +51,28 @@ interface AppState {
   // UI状态
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
+  
+  // Agent管理
+  models: AIModel[];
+  agentConfigs: AgentConfig[];
+  promptTemplates: PromptTemplate[];
+  workflowTemplates: WorkflowTemplate[];
+  testResults: PromptTestResult[];
+  
+  updateModel: (id: string, updates: Partial<AIModel>) => void;
+  addAgentConfig: (config: AgentConfig) => void;
+  updateAgentConfig: (id: string, updates: Partial<AgentConfig>) => void;
+  deleteAgentConfig: (id: string) => void;
+  
+  addPromptTemplate: (template: PromptTemplate) => void;
+  updatePromptTemplate: (id: string, updates: Partial<PromptTemplate>) => void;
+  deletePromptTemplate: (id: string) => void;
+  
+  addWorkflowTemplate: (template: WorkflowTemplate) => void;
+  updateWorkflowTemplate: (id: string, updates: Partial<WorkflowTemplate>) => void;
+  deleteWorkflowTemplate: (id: string) => void;
+  
+  addTestResult: (result: PromptTestResult) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -45,6 +85,13 @@ export const useStore = create<AppState>((set) => ({
   knowledgeBase: mockKnowledge,
   agentMessages: [],
   sidebarOpen: true,
+  
+  // Agent数据
+  models: mockModels,
+  agentConfigs: mockAgentConfigs,
+  promptTemplates: mockPromptTemplates,
+  workflowTemplates: mockWorkflowTemplates,
+  testResults: mockTestResults,
   
   // 项目方法
   setCurrentProject: (project) => set({ currentProject: project }),
@@ -109,4 +156,52 @@ export const useStore = create<AppState>((set) => ({
   
   // UI方法
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
+  
+  // Agent方法
+  updateModel: (id, updates) =>
+    set((state) => ({
+      models: state.models.map(m => m.id === id ? { ...m, ...updates } : m),
+    })),
+  
+  addAgentConfig: (config) =>
+    set((state) => ({ agentConfigs: [...state.agentConfigs, config] })),
+  
+  updateAgentConfig: (id, updates) =>
+    set((state) => ({
+      agentConfigs: state.agentConfigs.map(a => a.id === id ? { ...a, ...updates } : a),
+    })),
+  
+  deleteAgentConfig: (id) =>
+    set((state) => ({
+      agentConfigs: state.agentConfigs.filter(a => a.id !== id),
+    })),
+  
+  addPromptTemplate: (template) =>
+    set((state) => ({ promptTemplates: [...state.promptTemplates, template] })),
+  
+  updatePromptTemplate: (id, updates) =>
+    set((state) => ({
+      promptTemplates: state.promptTemplates.map(p => p.id === id ? { ...p, ...updates } : p),
+    })),
+  
+  deletePromptTemplate: (id) =>
+    set((state) => ({
+      promptTemplates: state.promptTemplates.filter(p => p.id !== id),
+    })),
+  
+  addWorkflowTemplate: (template) =>
+    set((state) => ({ workflowTemplates: [...state.workflowTemplates, template] })),
+  
+  updateWorkflowTemplate: (id, updates) =>
+    set((state) => ({
+      workflowTemplates: state.workflowTemplates.map(w => w.id === id ? { ...w, ...updates } : w),
+    })),
+  
+  deleteWorkflowTemplate: (id) =>
+    set((state) => ({
+      workflowTemplates: state.workflowTemplates.filter(w => w.id !== id),
+    })),
+  
+  addTestResult: (result) =>
+    set((state) => ({ testResults: [result, ...state.testResults] })),
 }));

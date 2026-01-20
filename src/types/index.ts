@@ -123,3 +123,134 @@ export interface AgentMessage {
   timestamp: Date;
   metadata?: any;
 }
+
+// AI模型类型
+export type ModelProvider = 'openai' | 'anthropic' | 'google' | 'azure' | 'local';
+
+export type ModelType = 
+  | 'gpt-4'
+  | 'gpt-4-turbo'
+  | 'gpt-3.5-turbo'
+  | 'claude-3-opus'
+  | 'claude-3-sonnet'
+  | 'claude-3-haiku'
+  | 'gemini-pro'
+  | 'gemini-ultra'
+  | 'azure-gpt-4'
+  | 'local-llama';
+
+// AI模型配置
+export interface AIModel {
+  id: string;
+  name: string;
+  provider: ModelProvider;
+  type: ModelType;
+  description: string;
+  maxTokens: number;
+  temperature: number;
+  costPer1kTokens: number;
+  capabilities: string[];
+  enabled: boolean;
+}
+
+// 提示词模板
+export interface PromptTemplate {
+  id: string;
+  name: string;
+  description: string;
+  phase: ProjectPhase;
+  category: 'analysis' | 'planning' | 'execution' | 'evaluation' | 'reporting';
+  template: string;
+  variables: PromptVariable[];
+  systemPrompt?: string;
+  examples?: PromptExample[];
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PromptVariable {
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object';
+  description: string;
+  required: boolean;
+  defaultValue?: any;
+}
+
+export interface PromptExample {
+  input: Record<string, any>;
+  output: string;
+}
+
+// Agent配置
+export interface AgentConfig {
+  id: string;
+  name: string;
+  description: string;
+  phase: ProjectPhase;
+  model: string; // model id
+  temperature: number;
+  maxTokens: number;
+  prompts: {
+    systemPrompt: string;
+    taskPrompts: Record<string, string>;
+  };
+  tools: AgentTool[];
+  enabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AgentTool {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+}
+
+// 工作流模板
+export interface WorkflowTemplate {
+  id: string;
+  name: string;
+  description: string;
+  phase: ProjectPhase;
+  steps: WorkflowStepTemplate[];
+  agentConfig?: string; // agent config id
+  enabled: boolean;
+  isDefault: boolean;
+  usageCount: number;
+  successRate: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WorkflowStepTemplate {
+  id: string;
+  name: string;
+  description: string;
+  type: 'analysis' | 'generation' | 'validation' | 'submission' | 'notification';
+  estimatedDuration: number; // seconds
+  promptTemplate?: string; // prompt template id
+  requiresHumanInput?: boolean;
+  humanInputPrompt?: string;
+  config?: Record<string, any>;
+}
+
+// 提示词测试结果
+export interface PromptTestResult {
+  id: string;
+  promptId: string;
+  input: Record<string, any>;
+  output: string;
+  model: string;
+  duration: number;
+  tokens: {
+    input: number;
+    output: number;
+    total: number;
+  };
+  cost: number;
+  success: boolean;
+  error?: string;
+  timestamp: Date;
+}

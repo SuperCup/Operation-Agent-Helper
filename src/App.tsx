@@ -7,6 +7,7 @@ import WorkflowExecution from '@/pages/WorkflowExecution';
 import Documents from '@/pages/Documents';
 import Knowledge from '@/pages/Knowledge';
 import Analytics from '@/pages/Analytics';
+import AgentManagement from '@/pages/AgentManagement';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="documents" element={<Documents />} />
           <Route path="knowledge" element={<Knowledge />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="agent" element={<AgentManagement />} />
         </Route>
       </Routes>
     </Router>

@@ -5,6 +5,7 @@ import {
   FileText, 
   BookOpen, 
   BarChart3,
+  Bot,
   Menu,
   X,
   Sparkles
@@ -15,6 +16,7 @@ import clsx from 'clsx';
 const navigation = [
   { name: '工作台', href: '/dashboard', icon: LayoutDashboard },
   { name: '项目管理', href: '/projects', icon: FolderKanban },
+  { name: 'Agent管理', href: '/agent', icon: Bot },
   { name: '文档中心', href: '/documents', icon: FileText },
   { name: '知识库', href: '/knowledge', icon: BookOpen },
   { name: '数据分析', href: '/analytics', icon: BarChart3 },
