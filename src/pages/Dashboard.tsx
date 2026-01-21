@@ -1,82 +1,64 @@
 import { useStore } from '@/store/useStore';
 import { 
-  TrendingUp, 
-  Target, 
-  Zap, 
-  Calendar,
-  ArrowRight,
-  Activity,
-  DollarSign,
-  ShoppingCart
+  Zap,
+  ListTodo,
+  TrendingUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { mockMetrics } from '@/data/mockData';
 import AIChatBox from '@/components/AIChatBox';
+import TaskList from '@/components/TaskList';
+import { useEffect } from 'react';
 
 export default function Dashboard() {
-  const { projects, workflows } = useStore();
+  const { projects, addTask } = useStore();
   
   const activeProjects = projects.filter(p => p.status === 'active');
-  const runningWorkflows = workflows.filter(w => w.status === 'running');
-  
-  // 计算今日数据
-  const todayMetrics = mockMetrics[mockMetrics.length - 1];
-  
-  const stats = [
-    {
-      name: '今日GMV',
-      value: `¥${(todayMetrics.gmv / 1000).toFixed(1)}K`,
-      change: '+12.5%',
-      icon: DollarSign,
-      color: 'bg-green-500',
-    },
-    {
-      name: '今日订单',
-      value: todayMetrics.orders.toLocaleString(),
-      change: '+8.3%',
-      icon: ShoppingCart,
-      color: 'bg-blue-500',
-    },
-    {
-      name: '投资回报率',
-      value: todayMetrics.roi.toFixed(2),
-      change: '+5.2%',
-      icon: TrendingUp,
-      color: 'bg-purple-500',
-    },
-    {
-      name: '活动转化率',
-      value: `${todayMetrics.cvr.toFixed(1)}%`,
-      change: '+2.1%',
-      icon: Target,
-      color: 'bg-orange-500',
-    },
-  ];
+
+  // 模拟添加初始任务（演示用）
+  useEffect(() => {
+    const hasInitialTask = useStore.getState().backgroundTasks.length > 0;
+    if (!hasInitialTask) {
+      // 添加一个示例任务
+      setTimeout(() => {
+        addTask({
+          id: 'task-demo-1',
+          title: '春节大促运营方案生成',
+          description: '正在分析市场环境，生成完整的运营方案...',
+          type: 'generation',
+          status: 'running',
+          progress: 65,
+          createdAt: new Date(),
+          projectId: 'proj-1',
+        });
+      }, 1000);
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
       {/* 页面标题 */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">工作台</h1>
-        <p className="text-gray-600 mt-1">通过AI对话，快速了解运营情况并完成工作</p>
+        <p className="text-gray-600 mt-1">通过AI对话完成运营工作，实时查看任务执行状态</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* AI对话区域 - 占2列 */}
-        <div className="lg:col-span-2">
-          <div className="card p-0 h-[600px]">
-            <div className="h-full flex flex-col">
+        <div className="lg:col-span-2 flex flex-col">
+          <div className="card p-0 flex-1">
+            <div className="h-full flex flex-col" style={{ minHeight: '700px' }}>
               {/* 标题栏 */}
               <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-primary-50 to-purple-50">
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center">
                   <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
                     <Zap className="w-5 h-5 text-white" />
                   </div>
-                  AI数字员工
+                  小琳
+                  <span className="ml-2 text-sm text-gray-500 font-normal">您的运营助手</span>
                   <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">在线</span>
                 </h2>
                 <p className="text-sm text-gray-600 mt-1 ml-11">
-                  我可以帮您查看数据、生成方案、监测项目、优化预算等
+                  描述需求或上传文件，我将为您完成运营工作
                 </p>
               </div>
 
@@ -88,171 +70,85 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 右侧数据卡片 */}
-        <div className="space-y-6">
-          {/* 数据概览 */}
-          <div className="space-y-4">
-            {stats.map((stat) => (
-              <div key={stat.name} className="card">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-600">{stat.name}</p>
-                    <p className="text-xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                    <div className="flex items-center mt-1 text-xs text-green-600">
-                      <TrendingUp className="w-3 h-3 mr-1" />
-                      <span>{stat.change}</span>
-                    </div>
-                  </div>
-                  <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center`}>
-                    <stat.icon className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-              </div>
-            ))}
+        {/* 右侧区域 */}
+        <div className="flex flex-col">
+          {/* 进行中的任务 */}
+          <div className="card mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <ListTodo className="w-5 h-5 mr-2 text-primary-600" />
+                进行中的任务
+              </h2>
+              <span className="text-xs text-gray-500">实时更新</span>
+            </div>
+            <TaskList />
           </div>
-        </div>
-      </div>
 
-      {/* 快速操作 */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">快速操作</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            to="/projects?action=new"
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all group"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center group-hover:bg-primary-200">
-                <Zap className="w-5 h-5 text-primary-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">创建新项目</p>
-                <p className="text-sm text-gray-500">快速启动运营项目</p>
-              </div>
+          {/* 活跃项目 - 撑满剩余空间 */}
+          <div className="card flex-1 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <TrendingUp className="w-5 h-5 mr-2 text-green-600" />
+                活跃项目
+              </h2>
+              <Link to="/projects" className="text-sm text-primary-600 hover:text-primary-700">
+                查看全部
+              </Link>
             </div>
-          </Link>
-
-          <Link
-            to="/knowledge"
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all group"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200">
-                <Activity className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">浏览知识库</p>
-                <p className="text-sm text-gray-500">查看成功案例</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            to="/analytics"
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-all group"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200">
-                <Calendar className="w-5 h-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">查看数据</p>
-                <p className="text-sm text-gray-500">效果评估分析</p>
-              </div>
-            </div>
-          </Link>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 进行中的项目 */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">进行中的项目</h2>
-            <Link to="/projects" className="text-sm text-primary-600 hover:text-primary-700 flex items-center">
-              查看全部
-              <ArrowRight className="w-4 h-4 ml-1" />
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {activeProjects.slice(0, 3).map((project) => (
-              <Link
-                key={project.id}
-                to={`/projects/${project.id}`}
-                className="block p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{project.name}</p>
-                    <p className="text-sm text-gray-500 mt-1">{project.brand} · {project.platform}</p>
-                  </div>
-                  <div className="ml-4">
-                    <span className={`badge ${
+            <div className="space-y-2 flex-1 overflow-y-auto">
+              {activeProjects.slice(0, 3).map((project) => (
+                <Link
+                  key={project.id}
+                  to={`/projects/${project.id}`}
+                  className="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <p className="font-medium text-gray-900 text-sm truncate">{project.name}</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs text-gray-500">{project.brand}</p>
+                    <span className={`badge text-xs ${
                       project.phase === 'execution' ? 'bg-green-100 text-green-800' :
                       project.phase === 'planning' ? 'bg-blue-100 text-blue-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {project.phase === 'execution' ? '执行中' :
-                       project.phase === 'planning' ? '计划中' :
-                       project.phase === 'monitoring' ? '监控中' :
-                       project.phase === 'completion' ? '已完成' : '准备中'}
+                       project.phase === 'planning' ? '计划中' : '准备中'}
                     </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-            {activeProjects.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <p>暂无进行中的项目</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 运行中的工作流 */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">AI 工作流</h2>
-            <Link to="/projects" className="text-sm text-primary-600 hover:text-primary-700 flex items-center">
-              查看全部
-              <ArrowRight className="w-4 h-4 ml-1" />
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {runningWorkflows.map((workflow) => {
-              const project = projects.find(p => p.id === workflow.projectId);
-              const completedSteps = workflow.steps.filter(s => s.status === 'success').length;
-              const progress = (completedSteps / workflow.steps.length) * 100;
-              
-              return (
-                <Link
-                  key={workflow.id}
-                  to={`/workflow/${workflow.id}`}
-                  className="block p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-medium text-gray-900">{workflow.name}</p>
-                    <span className="text-sm text-gray-500">
-                      {completedSteps}/{workflow.steps.length}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 mb-2">{project?.name}</p>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-primary-600 h-2 rounded-full transition-all"
-                      style={{ width: `${progress}%` }}
-                    />
                   </div>
                 </Link>
-              );
-            })}
-            {runningWorkflows.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <p>暂无运行中的工作流</p>
+              ))}
+              {activeProjects.length === 0 && (
+                <div className="text-center py-6 text-gray-500 text-sm">
+                  <p>暂无活跃项目</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 使用提示 - 横跨两侧 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-3">
+          <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+            <h3 className="font-semibold text-gray-900 mb-3 text-sm">💡 使用提示</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-gray-700">
+              <div className="flex items-start space-x-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>在对话框中描述需求，AI会自动创建任务并在后台执行</span>
               </div>
-            )}
+              <div className="flex items-start space-x-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>支持上传文件、图片作为参考资料，提升方案质量</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>多个任务可以并行执行，互不影响，提高工作效率</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>任务完成后结果会自动在对话中展示，可查看详情</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

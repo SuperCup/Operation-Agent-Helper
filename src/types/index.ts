@@ -124,6 +124,26 @@ export interface AgentMessage {
   metadata?: any;
 }
 
+// 任务状态
+export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'paused';
+
+// 后台任务（用于工作台“进行中的任务”并行执行展示）
+export interface BackgroundTask {
+  id: string;
+  title: string;
+  description: string;
+  type: 'workflow' | 'report' | 'analysis' | 'generation';
+  status: TaskStatus;
+  progress: number;
+  createdAt: Date;
+  startedAt?: Date;
+  completedAt?: Date;
+  projectId?: string;
+  workflowId?: string;
+  result?: any;
+  error?: string;
+}
+
 // AI模型类型
 export type ModelProvider = 'openai' | 'anthropic' | 'google' | 'azure' | 'local';
 
@@ -182,6 +202,9 @@ export interface PromptExample {
   output: string;
 }
 
+// 发布状态
+export type PublishStatus = 'draft' | 'testing' | 'published';
+
 // Agent配置
 export interface AgentConfig {
   id: string;
@@ -197,6 +220,9 @@ export interface AgentConfig {
   };
   tools: AgentTool[];
   enabled: boolean;
+  publishStatus: PublishStatus;
+  version: number;
+  publishedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -206,6 +232,20 @@ export interface AgentTool {
   name: string;
   description: string;
   enabled: boolean;
+}
+
+// Agent调试记录
+export interface AgentDebugRun {
+  id: string;
+  agentConfigId: string;
+  taskKey: string;
+  input: string;
+  output: string;
+  model: string;
+  duration: number;
+  success: boolean;
+  error?: string;
+  timestamp: Date;
 }
 
 // 工作流模板

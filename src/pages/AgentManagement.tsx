@@ -1,18 +1,20 @@
 import { useState } from 'react';
-import { Bot, Settings, FileCode, Workflow as WorkflowIcon } from 'lucide-react';
+import { Bot, Settings, FileCode, Workflow as WorkflowIcon, FlaskConical } from 'lucide-react';
 import ModelsTab from '@/components/agent/ModelsTab';
 import AgentConfigTab from '@/components/agent/AgentConfigTab';
 import PromptsTab from '@/components/agent/PromptsTab';
 import WorkflowTemplatesTab from '@/components/agent/WorkflowTemplatesTab';
+import DebugCenterTab from '@/components/agent/DebugCenterTab';
 import clsx from 'clsx';
 
-type TabType = 'models' | 'agents' | 'prompts' | 'workflows';
+type TabType = 'models' | 'agents' | 'prompts' | 'workflows' | 'debug';
 
 const tabs = [
   { id: 'models' as TabType, name: 'AI模型', icon: Bot, description: '管理可用的AI模型' },
-  { id: 'agents' as TabType, name: 'Agent配置', icon: Settings, description: '配置Agent行为和参数' },
+  { id: 'agents' as TabType, name: '智能体配置', icon: Settings, description: '配置智能体行为、发布状态与参数' },
   { id: 'prompts' as TabType, name: '提示词库', icon: FileCode, description: '管理和调试提示词模板' },
   { id: 'workflows' as TabType, name: '工作流模板', icon: WorkflowIcon, description: '管理工作流模板' },
+  { id: 'debug' as TabType, name: '调试中心', icon: FlaskConical, description: '对智能体进行调试并查看调试记录' },
 ];
 
 export default function AgentManagement() {
@@ -28,6 +30,8 @@ export default function AgentManagement() {
         return <PromptsTab />;
       case 'workflows':
         return <WorkflowTemplatesTab />;
+      case 'debug':
+        return <DebugCenterTab />;
     }
   };
 
@@ -35,8 +39,8 @@ export default function AgentManagement() {
     <div className="space-y-6">
       {/* 页面标题 */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Agent管理</h1>
-        <p className="text-gray-600 mt-1">配置和管理AI Agent的模型、提示词和工作流</p>
+        <h1 className="text-2xl font-bold text-gray-900">AI配置中心</h1>
+        <p className="text-gray-600 mt-1">集中管理模型、智能体、提示词、工作流与调试发布</p>
       </div>
 
       {/* 标签页导航 */}

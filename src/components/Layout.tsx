@@ -16,7 +16,7 @@ import clsx from 'clsx';
 const navigation = [
   { name: '工作台', href: '/dashboard', icon: LayoutDashboard },
   { name: '项目管理', href: '/projects', icon: FolderKanban },
-  { name: 'Agent管理', href: '/agent', icon: Bot },
+  { name: 'AI配置中心', href: '/agent', icon: Bot },
   { name: '文档中心', href: '/documents', icon: FileText },
   { name: '知识库', href: '/knowledge', icon: BookOpen },
   { name: '数据分析', href: '/analytics', icon: BarChart3 },
@@ -83,8 +83,8 @@ export default function Layout() {
               AI
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">AI 数字员工</p>
-              <p className="text-xs text-gray-500">随时为您服务</p>
+              <p className="text-sm font-medium text-gray-900 truncate">小琳</p>
+              <p className="text-xs text-gray-500">您的运营助手</p>
             </div>
           </div>
         </div>

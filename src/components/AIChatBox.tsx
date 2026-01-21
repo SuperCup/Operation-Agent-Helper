@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, Paperclip, X, FileText, Image as ImageIcon } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -14,19 +14,31 @@ interface Props {
   onSendMessage?: (message: string) => void;
 }
 
+interface Attachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  url?: string;
+}
+
 const quickActions = [
   { icon: '📊', text: '查看运营概况', query: '帮我查看当前所有项目的运营概况' },
   { icon: '📝', text: '生成运营方案', query: '帮我生成一个新的运营方案' },
   { icon: '🎯', text: '监测项目执行', query: '帮我监测春节大促活动的执行情况' },
   { icon: '💰', text: '预算分配建议', query: '帮我分析当前预算分配情况并给出优化建议' },
+  { icon: '📁', text: '创建新项目', query: '帮我创建一个新的运营项目' },
+  { icon: '📚', text: '查看知识库', query: '帮我查看历史成功案例' },
+  { icon: '📈', text: '数据分析报告', query: '帮我生成最近一周的数据分析报告' },
+  { icon: '⚙️', text: '管理Agent配置', query: '帮我查看和管理Agent配置' },
 ];
 
-export default function AIChatBox({ placeholder = '请描述您的需求，数字员工为您服务...', onSendMessage }: Props) {
+export default function AIChatBox({ placeholder = '请输入或"/"选择技能...', onSendMessage }: Props) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       type: 'system',
-      content: '您好！我是即时零售运营数字员工，可以帮您完成运营方案设计、计划执行、数据分析等工作。',
+      content: '您好！我是小琳，您的即时零售运营助手。可以帮您完成运营方案设计、计划执行、数据分析等工作。您可以通过文字描述需求，也可以上传文件、图片等资料。',
       timestamp: new Date(),
       suggestions: [
         '查看运营概况',
@@ -38,7 +50,9 @@ export default function AIChatBox({ placeholder = '请描述您的需求，数�
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -194,6 +208,31 @@ export default function AIChatBox({ placeholder = '请描述您的需求，数�
     handleSend(query);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newAttachments: Attachment[] = Array.from(files).map((file) => ({
+      id: Date.now().toString() + Math.random(),
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      url: URL.createObjectURL(file),
+    }));
+
+    setAttachments((prev) => [...prev, ...newAttachments]);
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((att) => att.id !== id));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
   return (
     <div className="flex flex-col h-full bg-white rounded-xl border border-gray-200">
       {/* 消息列表 */}
@@ -279,15 +318,15 @@ export default function AIChatBox({ placeholder = '请描述您的需求，数�
       {messages.length === 1 && (
         <div className="px-4 py-3 border-t border-gray-100">
           <p className="text-xs text-gray-500 mb-2">快捷操作</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {quickActions.map((action, index) => (
               <button
                 key={index}
                 onClick={() => handleQuickAction(action.query)}
-                className="flex items-center space-x-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-left"
+                className="flex flex-col items-center space-y-1 px-2 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <span className="text-lg">{action.icon}</span>
-                <span className="text-sm text-gray-700 flex-1">{action.text}</span>
+                <span className="text-2xl">{action.icon}</span>
+                <span className="text-xs text-gray-700 text-center leading-tight">{action.text}</span>
               </button>
             ))}
           </div>
@@ -295,26 +334,81 @@ export default function AIChatBox({ placeholder = '请描述您的需求，数�
       )}
 
       {/* 输入框 */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-2">
-          <div className="flex-1 relative">
+      <div className="px-4 pb-4 pt-3 border-t border-gray-100">
+        {/* 附件预览 */}
+        {attachments.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {attachments.map((att) => (
+              <div
+                key={att.id}
+                className="flex items-center space-x-2 px-3 py-2 bg-gray-100 rounded-lg group"
+              >
+                {att.type.startsWith('image/') ? (
+                  <ImageIcon className="w-4 h-4 text-blue-600" />
+                ) : (
+                  <FileText className="w-4 h-4 text-gray-600" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-900 truncate max-w-[150px]">{att.name}</p>
+                  <p className="text-xs text-gray-500">{formatFileSize(att.size)}</p>
+                </div>
+                <button
+                  onClick={() => removeAttachment(att.id)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 输入框主体 - 参考图片样式 */}
+        <div className="relative">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          
+          {/* 圆角输入框容器 */}
+          <div className="flex items-center bg-white border-2 border-gray-200 rounded-2xl px-4 py-2 hover:border-gray-300 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100 transition-all">
+            {/* 附件按钮 */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 transition-colors mr-2"
+              title="上传附件"
+            >
+              <Paperclip className="w-5 h-5" />
+            </button>
+
+            {/* 输入框 */}
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
               placeholder={placeholder}
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 pr-10"
+              className="flex-1 bg-transparent outline-none text-gray-900 placeholder-gray-400 text-sm"
             />
-            <Sparkles className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+
+            {/* 发送按钮 */}
+            <button
+              onClick={() => handleSend()}
+              disabled={(!input.trim() && attachments.length === 0) || isTyping}
+              className="flex-shrink-0 w-8 h-8 bg-primary-600 text-white rounded-full hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center ml-2"
+            >
+              <Send className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={() => handleSend()}
-            disabled={!input.trim() || isTyping}
-            className="p-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Send className="w-5 h-5" />
-          </button>
         </div>
       </div>
     </div>

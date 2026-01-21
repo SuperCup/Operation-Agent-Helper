@@ -88,11 +88,10 @@ const phaseLabels: Record<string, string> = {
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { projects, workflows, documents } = useStore();
+  const { projects, documents } = useStore();
   const [activeModule, setActiveModule] = useState<ModuleType>('plan');
   
   const project = projects.find(p => p.id === id);
-  const projectWorkflows = workflows.filter(w => w.projectId === id);
   const projectDocuments = documents.filter(d => d.projectId === id);
 
   useEffect(() => {

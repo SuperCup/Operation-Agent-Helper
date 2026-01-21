@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '@/store/useStore';
-import { Plus, Edit, Trash2, Copy, CheckCircle2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Copy, CheckCircle2, FlaskConical, Rocket, ClipboardCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
@@ -13,11 +13,33 @@ const phaseLabels: Record<string, string> = {
 };
 
 export default function AgentConfigTab() {
-  const { agentConfigs, models, deleteAgentConfig } = useStore();
+  const { agentConfigs, models, deleteAgentConfig, updateAgentConfig } = useStore();
   const [selectedAgent, setSelectedAgent] = useState(agentConfigs[0]?.id);
 
   const selectedAgentData = agentConfigs.find(a => a.id === selectedAgent);
   const agentModel = selectedAgentData ? models.find(m => m.id === selectedAgentData.model) : null;
+  
+  const publishBadge = (status: string) => {
+    switch (status) {
+      case 'published':
+        return 'bg-green-100 text-green-800';
+      case 'testing':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const publishLabel = (status: string) => {
+    switch (status) {
+      case 'published':
+        return '已发布';
+      case 'testing':
+        return '调试中';
+      default:
+        return '草稿';
+    }
+  };
 
   const handleDelete = (id: string) => {
     if (confirm('确定要删除这个Agent配置吗？')) {
@@ -28,16 +50,26 @@ export default function AgentConfigTab() {
     }
   };
 
+  const setPublishStatus = (status: 'draft' | 'testing' | 'published') => {
+    if (!selectedAgentData) return;
+    updateAgentConfig(selectedAgentData.id, {
+      publishStatus: status,
+      publishedAt: status === 'published' ? new Date() : selectedAgentData.publishedAt,
+      updatedAt: new Date(),
+      version: status === 'published' ? selectedAgentData.version + 1 : selectedAgentData.version,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* 操作栏 */}
       <div className="flex justify-between items-center">
         <div className="text-sm text-gray-600">
-          共 {agentConfigs.length} 个Agent配置
+          共 {agentConfigs.length} 个智能体配置
         </div>
         <button className="btn-primary flex items-center space-x-2">
           <Plus className="w-4 h-4" />
-          <span>新建Agent</span>
+          <span>新建智能体</span>
         </button>
       </div>
 
@@ -65,6 +97,12 @@ export default function AgentConfigTab() {
               </div>
 
               <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">发布状态</span>
+                  <span className={`badge ${publishBadge(agent.publishStatus)}`}>
+                    {publishLabel(agent.publishStatus)} · v{agent.version}
+                  </span>
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">阶段</span>
                   <span className="badge bg-primary-100 text-primary-800">
@@ -123,7 +161,38 @@ export default function AgentConfigTab() {
       {/* Agent详情 */}
       {selectedAgentData && agentModel && (
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Agent详情</h3>
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">智能体详情</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                发布状态：{publishLabel(selectedAgentData.publishStatus)} · v{selectedAgentData.version}
+                {selectedAgentData.publishedAt && ` · 最近发布于 ${format(selectedAgentData.publishedAt, 'yyyy-MM-dd HH:mm', { locale: zhCN })}`}
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setPublishStatus('testing')}
+                className="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors flex items-center space-x-2 text-sm"
+              >
+                <FlaskConical className="w-4 h-4" />
+                <span>进入调试</span>
+              </button>
+              <button
+                onClick={() => setPublishStatus('published')}
+                className="px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors flex items-center space-x-2 text-sm"
+              >
+                <Rocket className="w-4 h-4" />
+                <span>发布</span>
+              </button>
+              <button
+                onClick={() => setPublishStatus('draft')}
+                className="px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex items-center space-x-2 text-sm"
+              >
+                <ClipboardCheck className="w-4 h-4" />
+                <span>转草稿</span>
+              </button>
+            </div>
+          </div>
           
           <div className="space-y-6">
             {/* 基本信息 */}

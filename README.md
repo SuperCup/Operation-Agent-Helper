@@ -1,6 +1,6 @@
-# 即时零售运营AI助手
+# 即时零售运营数字员工 - 小琳
 
-一个专为到家平台活动运营与广告投放设计的AI助手系统，帮助运营人员高效完成从方案设计到效果评估的全流程工作。
+一个专为到家平台活动运营与广告投放设计的AI数字员工系统，帮助运营人员高效完成从方案设计到效果评估的全流程工作。
 
 ## 功能特性
 
@@ -19,14 +19,15 @@
    - 实时执行日志与进度追踪
    - 异常处理与人工介入提醒
 
-3. **Agent管理中心** ⭐ NEW
+3. **AI配置中心** ⭐ NEW
    - **AI模型管理**：支持OpenAI、Anthropic、Google等多种模型
    - **模型配置**：可调节Temperature、Max Tokens等参数
-   - **Agent配置**：为不同阶段配置专属Agent
+   - **智能体配置**：为不同阶段配置专属智能体（含发布状态：草稿/调试中/已发布）
    - **提示词库**：管理和调试提示词模板
    - **在线测试**：实时测试提示词效果，查看Token消耗
    - **工作流模板**：可复用的工作流模板管理
    - **性能统计**：查看使用次数、成功率等指标
+   - **调试中心**：对智能体进行调试运行并沉淀调试记录
 
 4. **知识库系统**
    - 优秀运营案例沉淀
@@ -97,7 +98,7 @@ npm run preview
 \`\`\`
 src/
 ├── components/          # 可复用组件
-│   ├── agent/          # Agent管理组件 ⭐ NEW
+│   ├── agent/          # AI配置中心组件 ⭐ NEW
 │   │   ├── ModelsTab.tsx          # AI模型管理
 │   │   ├── AgentConfigTab.tsx     # Agent配置
 │   │   ├── PromptsTab.tsx         # 提示词管理
@@ -111,7 +112,7 @@ src/
 │   ├── Projects.tsx    # 项目管理
 │   ├── ProjectDetail.tsx
 │   ├── WorkflowExecution.tsx  # AI工作流执行
-│   ├── AgentManagement.tsx    # Agent管理 ⭐ NEW
+│   ├── AgentManagement.tsx    # AI配置中心 ⭐ NEW
 │   ├── Documents.tsx   # 文档中心
 │   ├── Knowledge.tsx   # 知识库
 │   └── Analytics.tsx   # 数据分析

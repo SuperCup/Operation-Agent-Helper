@@ -9,7 +9,9 @@ import {
   AgentConfig,
   PromptTemplate,
   WorkflowTemplate,
-  PromptTestResult
+  PromptTestResult,
+  BackgroundTask,
+  AgentDebugRun
 } from '@/types';
 import { mockProjects, mockWorkflows, mockDocuments, mockKnowledge } from '@/data/mockData';
 import { 
@@ -48,16 +50,23 @@ interface AppState {
   addAgentMessage: (message: AgentMessage) => void;
   clearAgentMessages: () => void;
   
+  // 后台任务
+  backgroundTasks: BackgroundTask[];
+  addTask: (task: BackgroundTask) => void;
+  updateTask: (id: string, updates: Partial<BackgroundTask>) => void;
+  removeTask: (id: string) => void;
+  
   // UI状态
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   
-  // Agent管理
+  // AI配置中心（智能体/模型/提示词/工作流）
   models: AIModel[];
   agentConfigs: AgentConfig[];
   promptTemplates: PromptTemplate[];
   workflowTemplates: WorkflowTemplate[];
   testResults: PromptTestResult[];
+  agentDebugRuns: AgentDebugRun[];
   
   updateModel: (id: string, updates: Partial<AIModel>) => void;
   addAgentConfig: (config: AgentConfig) => void;
@@ -73,6 +82,10 @@ interface AppState {
   deleteWorkflowTemplate: (id: string) => void;
   
   addTestResult: (result: PromptTestResult) => void;
+
+  // Agent调试记录
+  addAgentDebugRun: (run: AgentDebugRun) => void;
+  clearAgentDebugRuns: () => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -84,6 +97,7 @@ export const useStore = create<AppState>((set) => ({
   documents: mockDocuments,
   knowledgeBase: mockKnowledge,
   agentMessages: [],
+  backgroundTasks: [],
   sidebarOpen: true,
   
   // Agent数据
@@ -92,6 +106,7 @@ export const useStore = create<AppState>((set) => ({
   promptTemplates: mockPromptTemplates,
   workflowTemplates: mockWorkflowTemplates,
   testResults: mockTestResults,
+  agentDebugRuns: [],
   
   // 项目方法
   setCurrentProject: (project) => set({ currentProject: project }),
@@ -204,4 +219,24 @@ export const useStore = create<AppState>((set) => ({
   
   addTestResult: (result) =>
     set((state) => ({ testResults: [result, ...state.testResults] })),
+
+  // Agent调试记录
+  addAgentDebugRun: (run) =>
+    set((state) => ({ agentDebugRuns: [run, ...state.agentDebugRuns] })),
+
+  clearAgentDebugRuns: () => set({ agentDebugRuns: [] }),
+  
+  // 后台任务方法
+  addTask: (task) =>
+    set((state) => ({ backgroundTasks: [task, ...state.backgroundTasks] })),
+  
+  updateTask: (id, updates) =>
+    set((state) => ({
+      backgroundTasks: state.backgroundTasks.map(t => t.id === id ? { ...t, ...updates } : t),
+    })),
+  
+  removeTask: (id) =>
+    set((state) => ({
+      backgroundTasks: state.backgroundTasks.filter(t => t.id !== id),
+    })),
 }));
