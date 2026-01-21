@@ -248,6 +248,12 @@ export interface AgentDebugRun {
   timestamp: Date;
 }
 
+// 客户（品牌/企业）信息
+export interface Customer {
+  id: string;
+  name: string;
+}
+
 // 工作流模板
 export interface WorkflowTemplate {
   id: string;

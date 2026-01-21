@@ -11,7 +11,8 @@ import {
   WorkflowTemplate,
   PromptTestResult,
   BackgroundTask,
-  AgentDebugRun
+  AgentDebugRun,
+  Customer
 } from '@/types';
 import { mockProjects, mockWorkflows, mockDocuments, mockKnowledge } from '@/data/mockData';
 import { 
@@ -59,6 +60,11 @@ interface AppState {
   // UI状态
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
+
+  // 客户切换
+  customers: Customer[];
+  currentCustomer: Customer;
+  setCurrentCustomer: (customerId: string) => void;
   
   // AI配置中心（智能体/模型/提示词/工作流）
   models: AIModel[];
@@ -99,6 +105,17 @@ export const useStore = create<AppState>((set) => ({
   agentMessages: [],
   backgroundTasks: [],
   sidebarOpen: true,
+
+  // 客户
+  customers: [
+    { id: 'customer-1', name: '达能' },
+    { id: 'customer-2', name: '嘉士伯' },
+    { id: 'customer-3', name: '康师傅' },
+    { id: 'customer-4', name: '汉高' },
+    { id: 'customer-5', name: '海天' },
+    { id: 'customer-6', name: '百威' },
+  ],
+  currentCustomer: { id: 'customer-1', name: '达能' },
   
   // Agent数据
   models: mockModels,
@@ -171,6 +188,13 @@ export const useStore = create<AppState>((set) => ({
   
   // UI方法
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
+
+  // 客户方法
+  setCurrentCustomer: (customerId) =>
+    set((state) => {
+      const found = state.customers.find((c) => c.id === customerId);
+      return found ? { currentCustomer: found } : {};
+    }),
   
   // Agent方法
   updateModel: (id, updates) =>
