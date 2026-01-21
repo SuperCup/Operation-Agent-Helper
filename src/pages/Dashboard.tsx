@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { mockMetrics } from '@/data/mockData';
+import AIChatBox from '@/components/AIChatBox';
 
 export default function Dashboard() {
   const { projects, workflows } = useStore();
@@ -57,28 +58,59 @@ export default function Dashboard() {
       {/* 页面标题 */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">工作台</h1>
-        <p className="text-gray-600 mt-1">欢迎回来，这是您的运营概览</p>
+        <p className="text-gray-600 mt-1">通过AI对话，快速了解运营情况并完成工作</p>
       </div>
 
-      {/* 数据卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
-          <div key={stat.name} className="card">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm text-gray-600">{stat.name}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-2">{stat.value}</p>
-                <div className="flex items-center mt-2 text-sm text-green-600">
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  <span>{stat.change}</span>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* AI对话区域 - 占2列 */}
+        <div className="lg:col-span-2">
+          <div className="card p-0 h-[600px]">
+            <div className="h-full flex flex-col">
+              {/* 标题栏 */}
+              <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-primary-50 to-purple-50">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                    <Zap className="w-5 h-5 text-white" />
+                  </div>
+                  AI数字员工
+                  <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">在线</span>
+                </h2>
+                <p className="text-sm text-gray-600 mt-1 ml-11">
+                  我可以帮您查看数据、生成方案、监测项目、优化预算等
+                </p>
               </div>
-              <div className={`w-12 h-12 ${stat.color} rounded-xl flex items-center justify-center`}>
-                <stat.icon className="w-6 h-6 text-white" />
+
+              {/* 对话区域 */}
+              <div className="flex-1 min-h-0">
+                <AIChatBox />
               </div>
             </div>
           </div>
-        ))}
+        </div>
+
+        {/* 右侧数据卡片 */}
+        <div className="space-y-6">
+          {/* 数据概览 */}
+          <div className="space-y-4">
+            {stats.map((stat) => (
+              <div key={stat.name} className="card">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600">{stat.name}</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                    <div className="flex items-center mt-1 text-xs text-green-600">
+                      <TrendingUp className="w-3 h-3 mr-1" />
+                      <span>{stat.change}</span>
+                    </div>
+                  </div>
+                  <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center`}>
+                    <stat.icon className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* 快速操作 */}

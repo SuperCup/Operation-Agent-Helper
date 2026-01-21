@@ -41,7 +41,10 @@ export default function Layout() {
             <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-semibold text-gray-900">运营助手</span>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-gray-900 leading-tight">即时零售运营</span>
+              <span className="text-xs text-primary-600 leading-tight">数字员工</span>
+            </div>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -80,8 +83,8 @@ export default function Layout() {
               AI
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">AI 运营助手</p>
-              <p className="text-xs text-gray-500">24/7 在线服务</p>
+              <p className="text-sm font-medium text-gray-900 truncate">AI 数字员工</p>
+              <p className="text-xs text-gray-500">随时为您服务</p>
             </div>
           </div>
         </div>
