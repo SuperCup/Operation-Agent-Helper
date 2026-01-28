@@ -1119,7 +1119,7 @@ ${agentConfig.description}`,
                 {/* 消息内容 */}
                 <div
                   className={`flex-1 group ${
-                    message.type === 'user' ? 'flex justify-end' : ''
+                    message.type === 'user' ? 'flex flex-col items-end' : 'flex flex-col items-start'
                   }`}
                 >
                   <div
@@ -1129,42 +1129,6 @@ ${agentConfig.description}`,
                         : 'bg-gray-50 text-gray-700'
                     }`}
                   >
-                    {/* 快捷操作按钮 */}
-                    <div className={`absolute ${message.type === 'user' ? 'left-full ml-2' : 'right-full mr-2'} top-2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(message.content);
-                        }}
-                        className="p-1.5 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-50 transition-colors"
-                        title="复制"
-                      >
-                        <Copy className="w-3.5 h-3.5 text-gray-600" />
-                      </button>
-                      {message.type === 'agent' && (
-                        <button
-                          onClick={async () => {
-                            // 重新生成逻辑：找到当前消息之前的最后一个用户消息
-                            const messageIndex = messages.findIndex(m => m.id === message.id);
-                            const previousMessages = messages.slice(0, messageIndex);
-                            const lastUserMessage = [...previousMessages].reverse().find(m => m.type === 'user');
-                            
-                            if (lastUserMessage) {
-                              // 移除当前agent消息和之后的消息
-                              const updatedMessages = messages.slice(0, messageIndex);
-                              updateSession({ messages: updatedMessages });
-                              
-                              // 重新发送用户消息
-                              await handleSend(lastUserMessage.content);
-                            }
-                          }}
-                          className="p-1.5 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-50 transition-colors"
-                          title="重新生成"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5 text-gray-600" />
-                        </button>
-                      )}
-                    </div>
-
                     {message.metadata?.isFormSubmission ? (
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2 mb-2">
@@ -1342,6 +1306,38 @@ ${agentConfig.description}`,
                     </div>
                   )}
                 </div>
+
+                  {/* 快捷操作按钮 - 气泡下方 */}
+                  <div className={`flex items-center space-x-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(message.content);
+                      }}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      title="复制"
+                    >
+                      <Copy className="w-3.5 h-3.5 text-gray-400" />
+                    </button>
+                    {message.type === 'agent' && (
+                      <button
+                        onClick={async () => {
+                          const messageIndex = messages.findIndex(m => m.id === message.id);
+                          const previousMessages = messages.slice(0, messageIndex);
+                          const lastUserMessage = [...previousMessages].reverse().find(m => m.type === 'user');
+                          
+                          if (lastUserMessage) {
+                            const updatedMessages = messages.slice(0, messageIndex);
+                            updateSession({ messages: updatedMessages });
+                            await handleSend(lastUserMessage.content);
+                          }
+                        }}
+                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        title="重新生成"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-gray-400" />
+                      </button>
+                    )}
+                  </div>
               </div>
             </div>
           ))}
@@ -1428,20 +1424,19 @@ ${agentConfig.description}`,
               <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center space-x-1.5 px-2 py-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors text-xs"
+                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
                   title="上传附件"
                 >
                   <Paperclip className="w-4 h-4" />
-                  <span>附件</span>
                 </button>
 
                 <button
                   onClick={() => handleSend()}
                   disabled={(!input.trim() && attachments.length === 0) || isTyping}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium"
+                  className="p-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title="发送"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>发送</span>
+                  <Send className="w-4 h-4" />
                 </button>
               </div>
             </div>
