@@ -4,7 +4,6 @@ import {
   ArrowLeft, 
   Play, 
   Edit,
-  Calendar,
   DollarSign,
   Target,
   FileText,
@@ -77,13 +76,6 @@ const modules = [
   },
 ];
 
-const phaseLabels: Record<string, string> = {
-  preparation: '项目准备',
-  planning: '项目启动',
-  execution: '项目执行',
-  monitoring: '效果监控',
-  completion: '项目结案',
-};
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -428,68 +420,9 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* 项目信息卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="card">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Target className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">当前阶段</p>
-              <p className="font-semibold text-gray-900">{phaseLabels[project.phase]}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">预算</p>
-              <p className="font-semibold text-gray-900">
-                {project.budget ? `¥${(project.budget / 10000).toFixed(1)}万` : '未设置'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">开始日期</p>
-              <p className="font-semibold text-gray-900">
-                {project.startDate ? format(project.startDate, 'MM/dd', { locale: zhCN }) : '未设置'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Activity className="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">项目状态</p>
-              <p className="font-semibold text-gray-900">
-                {project.status === 'active' ? '进行中' :
-                 project.status === 'draft' ? '草稿' :
-                 project.status === 'completed' ? '已完成' : '暂停'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 项目助手 - 模块化功能 */}
+      {/* 运营助手Agent - 模块化功能 */}
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">项目助手</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">运营助手Agent</h2>
         
         {/* 模块选择 */}
         <div className="grid grid-cols-7 gap-3 mb-6">

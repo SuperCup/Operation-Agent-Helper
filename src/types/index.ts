@@ -300,3 +300,110 @@ export interface PromptTestResult {
   error?: string;
   timestamp: Date;
 }
+
+// 意图类型
+export type IntentType = 
+  | 'operation_plan'      // 运营方案生成
+  | 'budget_split'        // 预算拆分
+  | 'activity_config'     // 活动配置
+  | 'rtb_plan'            // RTB方案
+  | 'rtb_config'          // RTB配置
+  | 'activity_ops'        // 活动运营
+  | 'rtb_ops';            // RTB运营
+
+// 任务类型
+export type TaskType = IntentType;
+
+// 意图识别状态
+export type IntentStatus = 'idle' | 'recognizing' | 'identified' | 'unclear';
+
+// 任务状态（会话中的任务）
+export type SessionTaskStatus = 'collecting' | 'running' | 'completed' | 'archived';
+
+// 会话中的任务
+export interface SessionTask {
+  id: string;
+  type: TaskType;
+  agentId: string;
+  workflowId?: string;
+  status: SessionTaskStatus;
+  collectedParams?: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 信息收集参数定义
+export interface ParamDefinition {
+  key: string;
+  label: string;
+  type: 'text' | 'number' | 'date' | 'select' | 'file' | 'textarea';
+  required: boolean;
+  options?: { label: string; value: string }[];
+  placeholder?: string;
+  description?: string;
+}
+
+// 信息收集状态
+export interface InfoCollection {
+  agentId: string;
+  requiredParams: ParamDefinition[];
+  collectedParams: Record<string, any>;
+  step: number;
+}
+
+// 会话状态
+export interface ConversationSession {
+  id: string;
+  title: string;
+  description?: string; // 任务描述/副标题
+  isNewSession: boolean;
+  hasActiveTask: boolean;
+  intentStatus: IntentStatus;
+  identifiedIntent?: IntentType;
+  recommendedAgents?: string[]; // Agent IDs
+  currentTask?: SessionTask;
+  infoCollection?: InfoCollection;
+  messages: AgentMessage[];
+  attachments: ConversationAttachment[];
+  generatedFiles: ConversationFile[];
+  createdAt: Date;
+  updatedAt: Date;
+  archivedAt?: Date;
+}
+
+// 会话附件
+export interface ConversationAttachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  url: string;
+  uploadedAt: Date;
+}
+
+// 会话生成的文件
+export interface ConversationFile {
+  id: string;
+  name: string;
+  type: 'ppt' | 'excel' | 'doc' | 'other';
+  url: string;
+  previewUrl?: string;
+  generatedAt: Date;
+  sourceTaskId?: string;
+}
+
+// 文档生成任务
+export interface DocumentGenerationTask {
+  id: string;
+  type: 'ppt' | 'excel' | 'doc';
+  sourceTaskId: string;
+  status: 'pending' | 'generating' | 'completed' | 'failed';
+  progress: number;
+  result?: {
+    url: string;
+    previewUrl?: string;
+  };
+  createdAt: Date;
+  completedAt?: Date;
+  error?: string;
+}

@@ -4,14 +4,8 @@ import { Link } from 'react-router-dom';
 import { 
   Plus, 
   Search, 
-  Filter,
-  Calendar,
-  DollarSign,
-  Tag,
   ArrowRight
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
 import CreateProjectModal from '@/components/CreateProjectModal';
 
 const phaseLabels: Record<string, string> = {
@@ -50,8 +44,8 @@ export default function Projects() {
       {/* 页面标题 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">项目管理</h1>
-          <p className="text-gray-600 mt-1">管理您的运营项目</p>
+          <h1 className="text-2xl font-bold text-gray-900">任务管理</h1>
+          <p className="text-gray-600 mt-1">管理您的历史任务</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -100,63 +94,25 @@ export default function Projects() {
         </div>
       </div>
 
-      {/* 项目列表 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredProjects.map((project) => (
-          <div key={project.id} className="card hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-gray-900 truncate">{project.name}</h3>
-                <p className="text-sm text-gray-600 mt-1">{project.description}</p>
-              </div>
-              <div className="flex flex-col gap-2 ml-4">
-                <span className={`badge ${
-                  project.status === 'active' ? 'bg-green-100 text-green-800' :
-                  project.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                  project.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {statusLabels[project.status]}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center text-sm text-gray-600">
-                <Tag className="w-4 h-4 mr-2" />
-                <span>{project.brand} · {project.category}</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <Filter className="w-4 h-4 mr-2" />
-                <span>{phaseLabels[project.phase]} · {project.platform}</span>
-              </div>
-              {project.budget && (
-                <div className="flex items-center text-sm text-gray-600">
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  <span>预算: ¥{(project.budget / 10000).toFixed(1)}万</span>
+      {/* 任务列表 - 仅显示标题和副标题 */}
+      <div className="card">
+        <div className="divide-y divide-gray-200">
+          {filteredProjects.map((project) => (
+            <Link
+              key={project.id}
+              to={`/projects/${project.id}`}
+              className="block px-4 py-4 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-semibold text-gray-900 truncate">{project.name}</h3>
+                  <p className="text-sm text-gray-600 mt-1 truncate">{project.description}</p>
                 </div>
-              )}
-              {project.startDate && project.endDate && (
-                <div className="flex items-center text-sm text-gray-600">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  <span>
-                    {format(project.startDate, 'MM/dd', { locale: zhCN })} - {format(project.endDate, 'MM/dd', { locale: zhCN })}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-4 border-t border-gray-200">
-              <Link
-                to={`/projects/${project.id}`}
-                className="flex items-center justify-between text-primary-600 hover:text-primary-700 font-medium"
-              >
-                <span>查看详情</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        ))}
+                <ArrowRight className="w-5 h-5 text-gray-400 flex-shrink-0 ml-4" />
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {filteredProjects.length === 0 && (

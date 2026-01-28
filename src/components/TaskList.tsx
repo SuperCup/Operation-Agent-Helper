@@ -1,8 +1,8 @@
 import { useStore } from '@/store/useStore';
-import { Loader2, CheckCircle2, XCircle, Pause, Play, Trash2, FileText, BarChart3, Sparkles, Workflow } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Pause, Play, Trash2, FileText, BarChart3, Sparkles, Workflow, Presentation, FileSpreadsheet, Eye, Download, Image as ImageIcon, File } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { BackgroundTask } from '@/types';
+import { BackgroundTask, ConversationFile } from '@/types';
 import clsx from 'clsx';
 
 const taskTypeIcons: Record<BackgroundTask['type'], typeof Workflow> = {
@@ -20,7 +20,7 @@ const taskTypeLabels: Record<BackgroundTask['type'], string> = {
 };
 
 export default function TaskList() {
-  const { backgroundTasks, updateTask, removeTask } = useStore();
+  const { backgroundTasks, documentGenerationTasks, currentSession, updateTask, removeTask, updateDocumentGenerationTask } = useStore();
 
   const handlePauseResume = (task: BackgroundTask) => {
     if (task.status === 'running') {
@@ -79,7 +79,138 @@ export default function TaskList() {
     }
   };
 
-  if (backgroundTasks.length === 0) {
+  const getDocumentIcon = (type: string) => {
+    switch (type) {
+      case 'ppt':
+        return Presentation;
+      case 'excel':
+        return FileSpreadsheet;
+      case 'doc':
+        return FileText;
+      default:
+        return FileText;
+    }
+  };
+
+  const getDocumentTypeLabel = (type: string) => {
+    switch (type) {
+      case 'ppt':
+        return 'PPT生成';
+      case 'excel':
+        return 'Excel生成';
+      case 'doc':
+        return 'Doc生成';
+      default:
+        return '文档生成';
+    }
+  };
+
+  // 从会话消息中提取Agent生成的文件和附件
+  const getGeneratedFiles = (): Array<{
+    id: string;
+    name: string;
+    type: string;
+    url?: string;
+    previewUrl?: string;
+    generatedAt: Date;
+    source: 'generated' | 'attachment';
+  }> => {
+    const files: Array<{
+      id: string;
+      name: string;
+      type: string;
+      url?: string;
+      previewUrl?: string;
+      generatedAt: Date;
+      source: 'generated' | 'attachment';
+    }> = [];
+
+    // 从会话的generatedFiles中获取
+    if (currentSession?.generatedFiles && currentSession.generatedFiles.length > 0) {
+      currentSession.generatedFiles.forEach((file: ConversationFile) => {
+        files.push({
+          id: file.id,
+          name: file.name,
+          type: file.type, // 这里type是 'ppt' | 'excel' | 'doc' | 'other'
+          url: file.url,
+          previewUrl: file.previewUrl,
+          generatedAt: file.generatedAt,
+          source: 'generated',
+        });
+      });
+    }
+
+    // 从消息中提取Agent发送的附件（只提取agent类型的消息）
+    if (currentSession?.messages) {
+      currentSession.messages.forEach((message) => {
+        if (message.type === 'agent' && message.metadata?.attachments) {
+          message.metadata.attachments.forEach((att: any) => {
+            // 避免重复添加
+            if (!files.find(f => f.id === att.id)) {
+              files.push({
+                id: att.id,
+                name: att.name,
+                type: att.type,
+                url: att.url,
+                previewUrl: att.url, // 使用url作为预览
+                generatedAt: message.timestamp,
+                source: 'attachment',
+              });
+            }
+          });
+        }
+      });
+    }
+
+    return files.sort((a, b) => b.generatedAt.getTime() - a.generatedAt.getTime());
+  };
+
+  const generatedFiles = getGeneratedFiles();
+
+  // 获取文件图标
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) {
+      return ImageIcon;
+    }
+    // 处理ConversationFile的type字段（'ppt' | 'excel' | 'doc' | 'other'）
+    if (type === 'ppt' || type.includes('presentation') || type.includes('powerpoint')) {
+      return Presentation;
+    }
+    if (type === 'excel' || type.includes('spreadsheet') || type.includes('xls')) {
+      return FileSpreadsheet;
+    }
+    if (type === 'doc' || type.includes('word') || type.includes('document') || type.includes('docx')) {
+      return FileText;
+    }
+    if (type.includes('pdf')) {
+      return FileText;
+    }
+    return File;
+  };
+
+  // 格式化文件类型显示
+  const getFileTypeLabel = (type: string) => {
+    if (type.startsWith('image/')) {
+      return '图片';
+    }
+    // 处理ConversationFile的type字段（'ppt' | 'excel' | 'doc' | 'other'）
+    if (type === 'ppt' || type.includes('presentation') || type.includes('powerpoint')) {
+      return 'PPT';
+    }
+    if (type === 'excel' || type.includes('spreadsheet') || type.includes('xls')) {
+      return 'Excel';
+    }
+    if (type === 'doc' || type.includes('word') || type.includes('document') || type.includes('docx')) {
+      return 'Word';
+    }
+    if (type.includes('pdf')) {
+      return 'PDF';
+    }
+    return '文件';
+  };
+
+
+  if (backgroundTasks.length === 0 && documentGenerationTasks.length === 0 && generatedFiles.length === 0) {
     return (
       <div className="text-center py-8">
         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -93,6 +224,190 @@ export default function TaskList() {
 
   return (
     <div className="space-y-3">
+      {/* Agent生成的文件 */}
+      {generatedFiles.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+            Agent生成的文件
+          </div>
+          {generatedFiles.map((file) => {
+            const FileIcon = getFileIcon(file.type);
+            return (
+              <div
+                key={file.id}
+                className="p-3 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:bg-primary-50/50 transition-all cursor-pointer group"
+                onClick={() => {
+                  if (file.previewUrl || file.url) {
+                    window.open(file.previewUrl || file.url, '_blank');
+                  }
+                }}
+              >
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center">
+                    <FileIcon className="w-4 h-4 text-primary-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h4 className="text-sm font-medium text-gray-900 truncate">{file.name}</h4>
+                      <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                        {getFileTypeLabel(file.type)}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                      <span>{format(file.generatedAt, 'MM-dd HH:mm', { locale: zhCN })}</span>
+                      {file.source === 'generated' && (
+                        <>
+                          <span>•</span>
+                          <span className="text-primary-600">Agent生成</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Eye className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 文档生成任务 */}
+      {documentGenerationTasks.map((task: {
+        id: string;
+        type: 'ppt' | 'excel' | 'doc';
+        sourceTaskId: string;
+        status: 'pending' | 'generating' | 'completed' | 'failed';
+        progress: number;
+        result?: { url: string; previewUrl?: string };
+        createdAt: Date;
+        completedAt?: Date;
+        error?: string;
+      }) => {
+        const DocIcon = getDocumentIcon(task.type);
+        
+        return (
+          <div
+            key={task.id}
+            className={clsx(
+              'p-4 rounded-lg border-2 transition-all',
+              task.status === 'generating' ? 'border-blue-200 bg-blue-50' :
+              task.status === 'completed' ? 'border-green-200 bg-green-50' :
+              task.status === 'failed' ? 'border-red-200 bg-red-50' :
+              'border-gray-200 bg-gray-50'
+            )}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start space-x-3 flex-1">
+                <div className={clsx(
+                  'w-8 h-8 rounded-lg flex items-center justify-center',
+                  task.status === 'generating' ? 'bg-blue-100' :
+                  task.status === 'completed' ? 'bg-green-100' :
+                  task.status === 'failed' ? 'bg-red-100' :
+                  'bg-gray-100'
+                )}>
+                  <DocIcon className={clsx(
+                    'w-4 h-4',
+                    task.status === 'generating' ? 'text-blue-600' :
+                    task.status === 'completed' ? 'text-green-600' :
+                    task.status === 'failed' ? 'text-red-600' :
+                    'text-gray-600'
+                  )} />
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <h4 className="font-medium text-gray-900 truncate">{getDocumentTypeLabel(task.type)}</h4>
+                  </div>
+                  
+                  {/* 进度条 */}
+                  {task.status === 'generating' && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                        <span>进度</span>
+                        <span>{Math.round(task.progress)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                        <div 
+                          className="bg-blue-600 h-1.5 rounded-full transition-all"
+                          style={{ width: `${task.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 时间信息 */}
+                  <p className="text-xs text-gray-500 mt-2">
+                    创建于 {format(task.createdAt, 'HH:mm:ss', { locale: zhCN })}
+                    {task.completedAt && ` · 完成于 ${format(task.completedAt, 'HH:mm:ss', { locale: zhCN })}`}
+                  </p>
+                </div>
+              </div>
+
+              {/* 状态和操作 */}
+              <div className="flex items-center space-x-2 ml-3">
+                {task.status === 'generating' && (
+                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                )}
+                {task.status === 'completed' && (
+                  <div className="flex items-center space-x-1">
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    {task.result?.previewUrl && (
+                      <>
+                        <button
+                          onClick={() => window.open(task.result?.previewUrl, '_blank')}
+                          className="p-1 hover:bg-white rounded transition-colors"
+                          title="预览"
+                        >
+                          <Eye className="w-4 h-4 text-gray-600" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = task.result?.url || '';
+                            link.download = '';
+                            link.click();
+                          }}
+                          className="p-1 hover:bg-white rounded transition-colors"
+                          title="下载"
+                        >
+                          <Download className="w-4 h-4 text-gray-600" />
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => updateDocumentGenerationTask(task.id, { status: 'failed' })}
+                      className="p-1 hover:bg-white rounded transition-colors"
+                      title="删除"
+                    >
+                      <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-600" />
+                    </button>
+                  </div>
+                )}
+                {task.status === 'failed' && (
+                  <button
+                    onClick={() => updateDocumentGenerationTask(task.id, { status: 'pending' })}
+                    className="p-1 hover:bg-white rounded transition-colors"
+                    title="删除"
+                  >
+                    <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-600" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 错误信息 */}
+            {task.status === 'failed' && task.error && (
+              <div className="mt-2 p-2 bg-red-100 border border-red-200 rounded text-xs text-red-800">
+                错误：{task.error}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* 后台任务 */}
       {backgroundTasks.map((task) => {
         const TaskIcon = taskTypeIcons[task.type];
         
