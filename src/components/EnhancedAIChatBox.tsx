@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Paperclip, X, FileText, Image as ImageIcon, Brain, ChevronDown, ChevronUp, Presentation, FileSpreadsheet } from 'lucide-react';
+import { Send, Bot, Loader2, Paperclip, X, FileText, Image as ImageIcon, Brain, ChevronDown, ChevronUp, Presentation, FileSpreadsheet, Download, Eye, Copy, RefreshCw, MoreVertical } from 'lucide-react';
 import { useStore } from '@/store/useStore';
-import { AgentMessage, IntentType, ParamDefinition } from '@/types';
+import { AgentMessage, IntentType, ParamDefinition, WorkflowTemplate } from '@/types';
 import { agentService } from '@/services/agentService';
 import { workflowEngine } from '@/services/workflowEngine';
 import { fileService } from '@/services/fileService';
@@ -26,9 +26,6 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
   const {
     currentSession,
     updateSession,
-    addAgentMessage,
-    agentConfigs,
-    workflowTemplates,
     addDocumentGenerationTask,
   } = useStore();
 
@@ -38,10 +35,11 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
   const [showInfoCollection, setShowInfoCollection] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [selectedIntent, setSelectedIntent] = useState<IntentType | null>(null);
+  const [openFileMenuId, setOpenFileMenuId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 初始化欢迎语和模拟完整会话流程
+  // 初始化模拟完整会话流程
   useEffect(() => {
     if (currentSession && (!currentSession.messages || currentSession.messages.length === 0)) {
       // 检查是否应该显示模拟会话（可以通过环境变量或配置控制）
@@ -50,18 +48,6 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
       if (showDemoSession) {
         // 模拟完整会话流程
         const demoMessages: AgentMessage[] = [];
-        
-        // 1. 欢迎消息
-        const welcomeMessage: AgentMessage = {
-          id: 'welcome-1',
-          type: 'system',
-          content: `您好！我是小琳，您的即时零售运营AI Agent助手。
-
-我可以帮您完成以下工作，请选择您想要执行的任务：`,
-          timestamp: new Date(Date.now() - 300000), // 5分钟前
-          metadata: { showCapabilities: true },
-        };
-        demoMessages.push(welcomeMessage);
         
         // 2. 用户选择能力（模拟用户点击）
         const userSelectMessage: AgentMessage = {
@@ -291,7 +277,7 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
         demoMessages.push(agentReplyMessage);
         
         // 添加所有消息到会话
-        demoMessages.forEach(msg => addAgentMessage(msg));
+        updateSession({ messages: demoMessages });
         
         // 添加模拟的生成文件
         const demoGeneratedFiles = [
@@ -349,7 +335,6 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
           timestamp: new Date(),
           metadata: { showCapabilities: true },
         };
-        addAgentMessage(welcomeMessage);
         updateSession({ messages: [welcomeMessage] });
       }
     }
@@ -408,7 +393,6 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
       },
     };
 
-    addAgentMessage(userMessage);
     updateSession({
       messages: [...(currentSession.messages || []), userMessage],
     });
@@ -443,7 +427,6 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
       metadata: { showCapabilities: true },
     };
 
-    addAgentMessage(response);
     updateSession({
       messages: [...(currentSession?.messages || []), response],
       intentStatus: 'unclear',
@@ -451,19 +434,12 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
   };
 
   const handleClearIntent = (intent: IntentType, summary: string) => {
-    // 找到对应的Agent
-    const agentConfig = agentConfigs.find((a) => {
-      const intentToPhase: Record<IntentType, string> = {
-        operation_plan: 'preparation',
-        budget_split: 'preparation',
-        activity_config: 'planning',
-        activity_ops: 'execution',
-        rtb_plan: 'preparation',
-        rtb_config: 'planning',
-        rtb_ops: 'execution',
-      };
-      return a.phase === intentToPhase[intent];
-    });
+    // 模拟Agent配置
+    const agentConfig = {
+      id: `agent-${intent}`,
+      name: `${summary}Agent`,
+      description: `专门用于${summary}的AI Agent`,
+    };
 
     const response: AgentMessage = {
       id: `agent-${Date.now()}`,
@@ -472,40 +448,45 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
 
 我推荐使用以下Agent来完成这个任务：
 
-${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找到合适的Agent'}`,
+🎯 ${agentConfig.name}
+${agentConfig.description}`,
       timestamp: new Date(),
       metadata: {
         showAgentSelection: true,
-        recommendedAgentId: agentConfig?.id,
+        recommendedAgentId: agentConfig.id,
         intent,
       },
     };
 
-    addAgentMessage(response);
     updateSession({
       messages: [...(currentSession?.messages || []), response],
       intentStatus: 'identified',
       identifiedIntent: intent,
-      recommendedAgents: agentConfig ? [agentConfig.id] : [],
+      recommendedAgents: [agentConfig.id],
     });
   };
 
-  const handleCapabilitySelect = (capabilityId: IntentType) => {
-    setSelectedIntent(capabilityId);
+  const handleCapabilitySelect = (capabilityId: IntentType | string) => {
+    // 只处理已知的IntentType
+    if (['operation_plan', 'budget_split', 'activity_config', 'activity_ops', 'rtb_plan', 'rtb_config', 'rtb_ops'].includes(capabilityId)) {
+      setSelectedIntent(capabilityId as IntentType);
+    }
     
-    // 找到对应的Agent
-    const agentConfig = agentConfigs.find((a) => {
-      const intentToPhase: Record<IntentType, string> = {
-        operation_plan: 'preparation',
-        budget_split: 'preparation',
-        activity_config: 'planning',
-        activity_ops: 'execution',
-        rtb_plan: 'preparation',
-        rtb_config: 'planning',
-        rtb_ops: 'execution',
-      };
-      return a.phase === intentToPhase[capabilityId];
-    });
+    // 模拟Agent配置
+    const agentConfigMap: Record<string, { id: string; name: string; description: string }> = {
+      category_insight: { id: 'agent-0', name: '品类洞察Agent', description: '专门用于品类洞察分析的智能体' },
+      operation_plan: { id: 'agent-1', name: '运营方案生成Agent', description: '专门用于生成运营方案的智能体' },
+      merchant_guide: { id: 'agent-1.5', name: '招商指引Agent', description: '专门用于招商指引的智能体' },
+      budget_split: { id: 'agent-2', name: '预算拆分Agent', description: '专门用于预算拆分的智能体' },
+      activity_config: { id: 'agent-3', name: '活动配置Agent', description: '专门用于活动配置的智能体' },
+      activity_ops: { id: 'agent-4', name: '活动运营Agent', description: '专门用于活动运营的智能体' },
+      rtb_plan: { id: 'agent-5', name: 'RTB方案Agent', description: '专门用于RTB方案的智能体' },
+      rtb_config: { id: 'agent-6', name: 'RTB配置Agent', description: '专门用于RTB配置的智能体' },
+      rtb_ops: { id: 'agent-7', name: 'RTB运营Agent', description: '专门用于RTB运营的智能体' },
+      review_report: { id: 'agent-8', name: '复盘报告Agent', description: '专门用于生成复盘报告的智能体' },
+    };
+
+    const agentConfig = agentConfigMap[capabilityId];
 
     if (agentConfig) {
       setSelectedAgentId(agentConfig.id);
@@ -614,7 +595,6 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
       },
     };
 
-    addAgentMessage(userFormMessage);
     updateSession({
       messages: [...(currentSession?.messages || []), userFormMessage],
     });
@@ -630,14 +610,10 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
       updatedAt: new Date(),
     };
 
-    // 找到工作流模板
-    const workflowTemplate = workflowTemplates.find(
-      (t) => t.agentConfig === selectedAgentId
-    );
-
-    if (workflowTemplate) {
-      // 创建工作流并开始执行
-      startWorkflow(workflowTemplate.id, task.id, params);
+    // 模拟工作流模板（直接启动工作流）
+    if (selectedAgentId) {
+      // 创建工作流并开始执行（使用模拟模板ID）
+      startWorkflow(`template-${selectedAgentId}`, task.id, params);
     }
 
     updateSession({
@@ -654,7 +630,6 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
       timestamp: new Date(),
     };
 
-    addAgentMessage(confirmMessage);
     updateSession({
       messages: [...(currentSession?.messages || []), confirmMessage],
     });
@@ -662,11 +637,24 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
 
   const startWorkflow = async (templateId: string, taskId: string, params: Record<string, any>) => {
     try {
-      // 获取工作流模板
-      const template = workflowTemplates.find((t) => t.id === templateId);
-      if (!template) {
-        throw new Error('工作流模板未找到');
-      }
+      // 模拟工作流模板（简化实现）
+      const template: WorkflowTemplate = {
+        id: templateId,
+        name: '运营方案生成工作流',
+        description: '生成运营方案的完整工作流',
+        phase: 'preparation',
+        steps: [
+          { id: 'step-1', name: '需求分析', description: '分析用户需求', type: 'analysis', estimatedDuration: 30 },
+          { id: 'step-2', name: '方案生成', description: '生成运营方案', type: 'generation', estimatedDuration: 60 },
+          { id: 'step-3', name: '方案优化', description: '优化方案内容', type: 'validation', estimatedDuration: 30 },
+        ],
+        enabled: true,
+        isDefault: true,
+        usageCount: 0,
+        successRate: 100,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
       // 启动工作流
       const workflowId = await workflowEngine.startWorkflow(template, taskId, params);
@@ -684,7 +672,6 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
         },
       };
 
-      addAgentMessage(initialWorkflowMessage);
       updateSession({
         messages: [...(currentSession?.messages || []), initialWorkflowMessage],
       });
@@ -767,8 +754,6 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
             timestamp: new Date(),
           };
 
-          addAgentMessage(completedMessage);
-          
           // 更新任务，保存工作流输出
           if (currentSession?.currentTask) {
             const workflowOutput = execution.steps
@@ -807,7 +792,6 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
         content: `工作流启动失败: ${error.message}`,
         timestamp: new Date(),
       };
-      addAgentMessage(errorMessage);
       updateSession({
         messages: [...(currentSession?.messages || []), errorMessage],
       });
@@ -865,7 +849,6 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
       timestamp: new Date(),
     };
 
-    addAgentMessage(userConfirmMessage);
     updateSession({
       messages: [...(currentSession.messages || []), userConfirmMessage],
     });
@@ -914,15 +897,23 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
           completedAt: new Date(),
         });
 
-        // 添加Agent确认消息
+        // 添加Agent确认消息，带生成的文件信息
         const agentConfirmMessage: AgentMessage = {
           id: `agent-confirm-doc-${Date.now()}`,
           type: 'agent',
-          content: `✅ ${type === 'ppt' ? 'PPT' : type === 'excel' ? 'Excel' : 'Word'}文档已生成完成！您可以在右侧预览区域查看和下载。`,
+          content: `文档已生成完成！`,
           timestamp: new Date(),
+          metadata: {
+            generatedFile: {
+              id: generationTask.id,
+              name: filename,
+              type: type,
+              url: result?.url,
+              previewUrl: result?.previewUrl,
+            },
+          },
         };
 
-        addAgentMessage(agentConfirmMessage);
         const updatedSession = useStore.getState().currentSession;
         if (updatedSession) {
           useStore.getState().updateSession({
@@ -941,43 +932,41 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
 
   // 思考过程显示组件
   const ThinkingDisplay = ({ thinking, isCompleted }: { thinking: string; isCompleted?: boolean }) => {
-    const [isExpanded, setIsExpanded] = useState(!isCompleted); // 未完成时展开，完成后折叠
+    const [isExpanded, setIsExpanded] = useState(!isCompleted);
 
     if (!isCompleted) {
-      // 执行中：直接显示
       return (
-        <div className="mt-2 bg-purple-50 border border-purple-200 rounded-lg p-3">
-          <div className="flex items-center space-x-2 mb-2">
-            <Brain className="w-4 h-4 text-purple-600" />
-            <span className="text-xs font-medium text-purple-900">正在思考...</span>
+        <div className="mt-2 bg-gray-50 border border-gray-100 rounded-lg p-2.5">
+          <div className="flex items-center space-x-2 mb-1.5">
+            <Brain className="w-3.5 h-3.5 text-gray-500" />
+            <span className="text-[11px] font-medium text-gray-600">正在思考...</span>
           </div>
-          <div className="text-xs text-purple-800 whitespace-pre-wrap leading-relaxed">
+          <div className="text-[11px] text-gray-500 whitespace-pre-wrap leading-relaxed">
             {thinking}
           </div>
         </div>
       );
     }
 
-    // 已完成：可折叠
     return (
-      <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden">
+      <div className="mt-2 border border-gray-100 rounded-lg overflow-hidden">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full flex items-center justify-between p-2 bg-gray-50 hover:bg-gray-100 transition-colors"
         >
-          <div className="flex items-center space-x-2">
-            <Brain className="w-4 h-4 text-purple-600" />
-            <span className="text-xs font-medium text-gray-700">思考过程</span>
+          <div className="flex items-center space-x-1.5">
+            <Brain className="w-3.5 h-3.5 text-gray-400" />
+            <span className="text-[11px] font-medium text-gray-500">思考过程</span>
           </div>
           {isExpanded ? (
-            <ChevronUp className="w-4 h-4 text-gray-400" />
+            <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-400" />
+            <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
           )}
         </button>
         {isExpanded && (
-          <div className="p-3 bg-purple-50 border-t border-purple-200">
-            <div className="text-xs text-purple-800 whitespace-pre-wrap leading-relaxed">
+          <div className="p-2.5 bg-gray-50/50 border-t border-gray-100">
+            <div className="text-[11px] text-gray-500 whitespace-pre-wrap leading-relaxed">
               {thinking}
             </div>
           </div>
@@ -988,12 +977,12 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
 
   // 可折叠的工作流显示组件
   const CollapsibleWorkflowDisplay = ({ workflowId, isCompleted }: { workflowId: string; isCompleted?: boolean }) => {
-    const [isExpanded, setIsExpanded] = useState(!isCompleted); // 未完成时展开，完成后折叠
+    const [isExpanded, setIsExpanded] = useState(!isCompleted);
     const execution = workflowEngine.getExecution(workflowId);
 
     if (!execution) {
       return (
-        <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
+        <div className="text-[11px] text-gray-400 p-2 bg-gray-50 rounded">
           工作流执行信息未找到
         </div>
       );
@@ -1002,27 +991,27 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
     const allCompleted = execution.steps.every(s => s.status === 'success' || s.status === 'failed');
 
     return (
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <div className="border border-gray-100 rounded-lg overflow-hidden">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full flex items-center justify-between p-2 bg-gray-50 hover:bg-gray-100 transition-colors"
         >
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-medium text-gray-700">
-              工作流执行过程 {allCompleted && `(${execution.steps.length}个步骤)`}
+          <div className="flex items-center space-x-1.5">
+            <span className="text-[11px] font-medium text-gray-500">
+              工作流 {allCompleted && `(${execution.steps.length}步)`}
             </span>
             {!allCompleted && (
-              <Loader2 className="w-3 h-3 text-blue-600 animate-spin" />
+              <Loader2 className="w-3 h-3 text-gray-400 animate-spin" />
             )}
           </div>
           {isExpanded ? (
-            <ChevronUp className="w-4 h-4 text-gray-400" />
+            <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-400" />
+            <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
           )}
         </button>
         {isExpanded && (
-          <div className="p-3 bg-white border-t border-gray-200">
+          <div className="p-2.5 bg-white border-t border-gray-100">
             <WorkflowExecutionDisplay
               workflowId={workflowId}
               steps={execution.steps}
@@ -1083,19 +1072,28 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
     ];
   };
 
-  const agentConfig = selectedAgentId
-    ? agentConfigs.find((a) => a.id === selectedAgentId)
-    : null;
+  // 模拟Agent配置
+  const agentConfigMap: Record<string, { id: string; name: string; description: string }> = {
+    'agent-1': { id: 'agent-1', name: '运营方案生成Agent', description: '专门用于生成运营方案的智能体' },
+    'agent-2': { id: 'agent-2', name: '预算拆分Agent', description: '专门用于预算拆分的智能体' },
+    'agent-3': { id: 'agent-3', name: '活动配置Agent', description: '专门用于活动配置的智能体' },
+    'agent-4': { id: 'agent-4', name: '活动运营Agent', description: '专门用于活动运营的智能体' },
+    'agent-5': { id: 'agent-5', name: 'RTB方案Agent', description: '专门用于RTB方案的智能体' },
+    'agent-6': { id: 'agent-6', name: 'RTB配置Agent', description: '专门用于RTB配置的智能体' },
+    'agent-7': { id: 'agent-7', name: 'RTB运营Agent', description: '专门用于RTB运营的智能体' },
+  };
+
+  const agentConfig = selectedAgentId ? agentConfigMap[selectedAgentId] : null;
 
   const messages = currentSession?.messages || [];
 
   return (
     <>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full bg-white">
         {/* 消息列表 - 可滚动 */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {messages.map((message) => (
-            <div key={message.id}>
+            <div key={message.id} id={`message-${message.id}`} className="transition-colors duration-500">
               <div
                 className={`flex items-start space-x-3 ${
                   message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
@@ -1103,34 +1101,70 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
               >
                 {/* 头像 */}
                 <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                  className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${
                     message.type === 'user'
-                      ? 'bg-primary-100'
+                      ? 'bg-emerald-600'
                       : message.type === 'system'
-                      ? 'bg-gradient-to-br from-purple-500 to-pink-500'
-                      : 'bg-gradient-to-br from-blue-500 to-primary-500'
+                      ? 'bg-gray-800'
+                      : 'bg-gray-800'
                   }`}
                 >
                   {message.type === 'user' ? (
-                    <User className="w-5 h-5 text-primary-600" />
+                    <span className="text-white text-xs font-medium">宇</span>
                   ) : (
-                    <Bot className="w-5 h-5 text-white" />
+                    <Bot className="w-4 h-4 text-white" />
                   )}
                 </div>
 
                 {/* 消息内容 */}
                 <div
-                  className={`flex-1 ${
+                  className={`flex-1 group ${
                     message.type === 'user' ? 'flex justify-end' : ''
                   }`}
                 >
                   <div
-                    className={`inline-block max-w-[85%] rounded-lg px-4 py-2 ${
+                    className={`relative inline-block max-w-[85%] rounded-lg px-3 py-2 ${
                       message.type === 'user'
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-900'
+                        ? 'bg-gray-100 text-gray-800'
+                        : 'bg-gray-50 text-gray-700'
                     }`}
                   >
+                    {/* 快捷操作按钮 */}
+                    <div className={`absolute ${message.type === 'user' ? 'left-full ml-2' : 'right-full mr-2'} top-2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(message.content);
+                        }}
+                        className="p-1.5 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-50 transition-colors"
+                        title="复制"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-gray-600" />
+                      </button>
+                      {message.type === 'agent' && (
+                        <button
+                          onClick={async () => {
+                            // 重新生成逻辑：找到当前消息之前的最后一个用户消息
+                            const messageIndex = messages.findIndex(m => m.id === message.id);
+                            const previousMessages = messages.slice(0, messageIndex);
+                            const lastUserMessage = [...previousMessages].reverse().find(m => m.type === 'user');
+                            
+                            if (lastUserMessage) {
+                              // 移除当前agent消息和之后的消息
+                              const updatedMessages = messages.slice(0, messageIndex);
+                              updateSession({ messages: updatedMessages });
+                              
+                              // 重新发送用户消息
+                              await handleSend(lastUserMessage.content);
+                            }
+                          }}
+                          className="p-1.5 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-50 transition-colors"
+                          title="重新生成"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 text-gray-600" />
+                        </button>
+                      )}
+                    </div>
+
                     {message.metadata?.isFormSubmission ? (
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2 mb-2">
@@ -1146,35 +1180,27 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
                     
                     {/* 显示附件 */}
                     {message.metadata?.attachments && message.metadata.attachments.length > 0 && (
-                      <div className={`mt-2 space-y-2 ${message.type === 'user' ? '' : 'pt-2 border-t border-gray-200'}`}>
+                      <div className={`mt-2 space-y-1.5 ${message.type === 'user' ? '' : 'pt-2 border-t border-gray-100'}`}>
                         {message.metadata.attachments.map((att: Attachment) => (
                           <div
                             key={att.id}
-                            className={`flex items-center space-x-2 p-2 rounded ${
-                              message.type === 'user'
-                                ? 'bg-white/10'
-                                : 'bg-white border border-gray-200'
-                            }`}
+                            className="flex items-center space-x-2 p-1.5 rounded bg-white border border-gray-100"
                           >
                             {att.type.startsWith('image/') ? (
-                              <ImageIcon className="w-4 h-4 flex-shrink-0" />
+                              <ImageIcon className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                             ) : (
-                              <FileText className="w-4 h-4 flex-shrink-0" />
+                              <FileText className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className={`text-xs truncate ${message.type === 'user' ? 'text-white' : 'text-gray-900'}`}>
-                                {att.name}
-                              </p>
-                              <p className={`text-xs ${message.type === 'user' ? 'text-white/70' : 'text-gray-500'}`}>
-                                {formatFileSize(att.size)}
-                              </p>
+                              <p className="text-xs text-gray-700 truncate">{att.name}</p>
+                              <p className="text-[10px] text-gray-400">{formatFileSize(att.size)}</p>
                             </div>
                             {att.url && (
                               <a
                                 href={att.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`text-xs underline ${message.type === 'user' ? 'text-white/80' : 'text-primary-600'}`}
+                                className="text-[10px] text-gray-500 hover:text-gray-700"
                               >
                                 查看
                               </a>
@@ -1185,19 +1211,13 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
                     )}
                   </div>
 
-                  {/* 能力介绍卡片 */}
-                  {message.metadata?.showCapabilities && (
-                    <div className="mt-3">
-                      <CapabilityCards onSelect={handleCapabilitySelect} />
-                    </div>
-                  )}
 
                   {/* Agent选择 */}
                   {message.metadata?.showAgentSelection && message.metadata?.recommendedAgentId && (
                     <div className="mt-3">
                       <button
                         onClick={() => handleAgentSelect(message.metadata.recommendedAgentId as string)}
-                        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+                        className="px-3 py-1.5 bg-gray-900 text-white rounded text-xs font-medium hover:bg-gray-800 transition-colors"
                       >
                         使用此Agent
                       </button>
@@ -1221,25 +1241,93 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => handleGenerateDocument('ppt')}
-                          className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors text-sm"
+                          className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors text-sm"
                         >
-                          <Presentation className="w-4 h-4 text-primary-600" />
+                          <Presentation className="w-4 h-4 text-orange-500" />
                           <span>生成PPT</span>
                         </button>
                         <button
                           onClick={() => handleGenerateDocument('excel')}
-                          className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors text-sm"
+                          className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors text-sm"
                         >
-                          <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                          <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
                           <span>生成Excel</span>
                         </button>
                         <button
                           onClick={() => handleGenerateDocument('doc')}
-                          className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors text-sm"
+                          className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors text-sm"
                         >
-                          <FileText className="w-4 h-4 text-blue-600" />
+                          <FileText className="w-4 h-4 text-blue-500" />
                           <span>生成Word</span>
                         </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 生成的文件展示 - 与文件预览样式一致，限制宽度 */}
+                  {message.metadata?.generatedFile && (
+                    <div className="mt-3 max-w-[240px]">
+                      <div className="p-3 rounded-lg bg-white border border-gray-200 hover:border-gray-300 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3 flex-1 min-w-0">
+                            <div className="flex-shrink-0 w-8 h-8 bg-emerald-50 rounded flex items-center justify-center">
+                              {message.metadata.generatedFile.type === 'ppt' && <Presentation className="w-4 h-4 text-emerald-500" />}
+                              {message.metadata.generatedFile.type === 'excel' && <FileSpreadsheet className="w-4 h-4 text-emerald-500" />}
+                              {message.metadata.generatedFile.type === 'doc' && <FileText className="w-4 h-4 text-emerald-500" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-800 truncate">{message.metadata.generatedFile.name}</p>
+                              <p className="text-[10px] text-gray-500 mt-0.5">
+                                {message.metadata.generatedFile.type === 'ppt' ? 'PPT' : 
+                                 message.metadata.generatedFile.type === 'excel' ? 'Excel' : 'Word'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="relative">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenFileMenuId(openFileMenuId === message.metadata.generatedFile.id ? null : message.metadata.generatedFile.id);
+                              }}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                            >
+                              <MoreVertical className="w-4 h-4 text-gray-400" />
+                            </button>
+                            {openFileMenuId === message.metadata.generatedFile.id && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-10"
+                                  onClick={() => setOpenFileMenuId(null)}
+                                />
+                                <div className="absolute right-0 top-8 z-20 w-32 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+                                  <button
+                                    onClick={() => {
+                                      setOpenFileMenuId(null);
+                                      window.open(message.metadata.generatedFile.previewUrl, '_blank');
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                    <span>预览</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setOpenFileMenuId(null);
+                                      const link = document.createElement('a');
+                                      link.href = message.metadata.generatedFile.url || '';
+                                      link.download = message.metadata.generatedFile.name;
+                                      link.click();
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span>下载</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1284,27 +1372,32 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
               {attachments.map((att) => (
                 <div
                   key={att.id}
-                  className="flex items-center space-x-2 px-3 py-2 bg-gray-100 rounded-lg group"
+                  className="flex items-center space-x-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg group"
                 >
                   {att.type.startsWith('image/') ? (
-                    <ImageIcon className="w-4 h-4 text-blue-600" />
+                    <ImageIcon className="w-4 h-4 text-blue-500" />
                   ) : (
-                    <FileText className="w-4 h-4 text-gray-600" />
+                    <FileText className="w-4 h-4 text-gray-500" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 truncate max-w-[150px]">{att.name}</p>
-                    <p className="text-xs text-gray-500">{formatFileSize(att.size)}</p>
+                    <p className="text-xs text-gray-700 truncate max-w-[120px]">{att.name}</p>
+                    <p className="text-[10px] text-gray-400">{formatFileSize(att.size)}</p>
                   </div>
                   <button
                     onClick={() => removeAttachment(att.id)}
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                    <X className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600" />
                   </button>
                 </div>
               ))}
             </div>
           )}
+
+          {/* 能力卡片 - 放在输入框上方 */}
+          <div className="mb-3">
+            <CapabilityCards onSelect={handleCapabilitySelect} />
+          </div>
 
           {/* 输入框主体 */}
           <div className="relative">
@@ -1317,36 +1410,40 @@ ${agentConfig ? `🎯 ${agentConfig.name}\n${agentConfig.description}` : '未找
               className="hidden"
             />
 
-            <div className="flex items-center bg-white border-2 border-gray-200 rounded-2xl px-4 py-2 hover:border-gray-300 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100 transition-all">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 transition-colors mr-2"
-                title="上传附件"
-              >
-                <Paperclip className="w-5 h-5" />
-              </button>
-
-              <input
-                type="text"
+            <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 hover:border-gray-300 focus-within:border-gray-400 focus-within:bg-white transition-all">
+              <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => {
+                onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     handleSend();
                   }
                 }}
                 placeholder={placeholder}
-                className="flex-1 bg-transparent outline-none text-gray-900 placeholder-gray-400 text-sm"
+                rows={3}
+                className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-400 text-sm resize-none"
               />
+              
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center space-x-1.5 px-2 py-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors text-xs"
+                  title="上传附件"
+                >
+                  <Paperclip className="w-4 h-4" />
+                  <span>附件</span>
+                </button>
 
-              <button
-                onClick={() => handleSend()}
-                disabled={(!input.trim() && attachments.length === 0) || isTyping}
-                className="flex-shrink-0 w-8 h-8 bg-primary-600 text-white rounded-full hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center ml-2"
-              >
-                <Send className="w-4 h-4" />
-              </button>
+                <button
+                  onClick={() => handleSend()}
+                  disabled={(!input.trim() && attachments.length === 0) || isTyping}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>发送</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

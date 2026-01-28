@@ -107,28 +107,17 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden bg-gray-50">
+    <div className="h-full w-full flex overflow-hidden bg-gray-50">
       {/* 左侧：历史任务列表 - NotebookLM风格 */}
-      <div className="w-64 flex-shrink-0 border-r border-gray-200 bg-white">
+      <div className="w-60 flex-shrink-0 bg-slate-50/80">
         <HistoryTaskList />
       </div>
 
       {/* 中间：对话区域 - 主工作区 */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* 标题栏 - 统一高度 h-14 */}
-        <div className="flex-shrink-0 h-14 px-4 border-b border-gray-200 bg-white flex items-center">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">AI</span>
-              </div>
-              <div>
-                <h1 className="text-sm font-semibold text-gray-900">小琳</h1>
-                <p className="text-xs text-gray-500">您的运营助手</p>
-              </div>
-            </div>
-            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">在线</span>
-          </div>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden border-x border-gray-200">
+        {/* 标题栏 */}
+        <div className="flex-shrink-0 h-12 px-4 border-b border-gray-200 bg-white flex items-center">
+          <span className="text-sm font-medium text-gray-700">对话</span>
         </div>
 
         {/* 对话内容区域 */}
@@ -137,18 +126,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 右侧：预览 */}
-      <div className="w-80 flex-shrink-0 border-l border-gray-200 bg-white flex flex-col overflow-hidden">
-        {/* 预览区域 */}
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          {/* 标题栏 - 统一高度 h-14 */}
-          <div className="flex-shrink-0 h-14 px-4 border-b border-gray-200 bg-white flex items-center">
-            <h2 className="text-sm font-semibold text-gray-900">预览</h2>
-          </div>
-          <div className="flex-1 min-h-0 overflow-y-auto p-4">
-            <TaskList />
-          </div>
-        </div>
+      {/* 右侧：文件预览 */}
+      <div className="w-72 flex-shrink-0 bg-gray-50 flex flex-col overflow-hidden">
+        <TaskList />
       </div>
 
       {/* 会话恢复模态框 */}

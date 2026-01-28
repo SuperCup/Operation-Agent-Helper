@@ -1,6 +1,5 @@
 import { WorkflowTemplate, StepStatus } from '@/types';
 import { agentService } from './agentService';
-import { useStore } from '@/store/useStore';
 
 interface WorkflowExecution {
   id: string;
@@ -491,19 +490,53 @@ class WorkflowEngine {
   }
 
   /**
-   * 获取模板（从store）
+   * 获取模板（模拟数据）
    */
   private async getTemplate(templateId: string): Promise<WorkflowTemplate | null> {
-    const state = useStore.getState();
-    return state.workflowTemplates.find((t) => t.id === templateId) || null;
+    // 返回模拟的工作流模板
+    return {
+      id: templateId,
+      name: '运营方案生成工作流',
+      description: '生成运营方案的完整工作流',
+      phase: 'preparation',
+      steps: [
+        { id: 'step-1', name: '需求分析', description: '分析用户需求', type: 'analysis', estimatedDuration: 30 },
+        { id: 'step-2', name: '方案生成', description: '生成运营方案', type: 'generation', estimatedDuration: 60 },
+        { id: 'step-3', name: '方案优化', description: '优化方案内容', type: 'validation', estimatedDuration: 30 },
+      ],
+      enabled: true,
+      isDefault: true,
+      usageCount: 0,
+      successRate: 100,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
   }
 
   /**
-   * 获取Agent配置（从store）
+   * 获取Agent配置（模拟数据）
    */
   private async getAgentConfig(agentId: string): Promise<any> {
-    const state = useStore.getState();
-    return state.agentConfigs.find((a) => a.id === agentId) || null;
+    // 返回模拟的Agent配置
+    return {
+      id: agentId,
+      name: '运营方案生成Agent',
+      description: '专门用于生成运营方案的智能体',
+      phase: 'preparation',
+      model: 'deepseek-chat',
+      temperature: 0.7,
+      maxTokens: 2000,
+      prompts: {
+        systemPrompt: '你是一个专业的运营方案生成助手。',
+        taskPrompts: {},
+      },
+      tools: [],
+      enabled: true,
+      publishStatus: 'published',
+      version: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
   }
 
   /**
