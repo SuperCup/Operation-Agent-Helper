@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { 
   ConversationSession,
-  DocumentGenerationTask
+  DocumentGenerationTask,
+  IntentType
 } from '@/types';
 
 interface AppState {
@@ -9,12 +10,17 @@ interface AppState {
   currentSession: ConversationSession | null;
   archivedSessions: ConversationSession[];
   documentGenerationTasks: DocumentGenerationTask[];
+  activeIntent: IntentType | null;
+  /** 导航栏点击 Agent 确认后，通知 ChatBox 自动弹出前置表单 */
+  pendingAgentIntent: IntentType | null;
   createNewSession: () => ConversationSession;
   updateSession: (updates: Partial<ConversationSession>) => void;
   archiveSession: (title?: string) => void;
   restoreSession: (sessionId: string) => void;
   addDocumentGenerationTask: (task: DocumentGenerationTask) => void;
   updateDocumentGenerationTask: (id: string, updates: Partial<DocumentGenerationTask>) => void;
+  setActiveIntent: (intent: IntentType | null) => void;
+  setPendingAgentIntent: (intent: IntentType | null) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -22,6 +28,8 @@ export const useStore = create<AppState>((set) => ({
   currentSession: null,
   archivedSessions: [],
   documentGenerationTasks: [],
+  activeIntent: null,
+  pendingAgentIntent: null,
   
   createNewSession: () => {
     const newSession: ConversationSession = {
@@ -52,6 +60,9 @@ export const useStore = create<AppState>((set) => ({
         },
       };
     }),
+
+  setActiveIntent: (intent) => set({ activeIntent: intent }),
+  setPendingAgentIntent: (intent) => set({ pendingAgentIntent: intent }),
   
   archiveSession: (title) =>
     set((state) => {
@@ -68,8 +79,25 @@ export const useStore = create<AppState>((set) => ({
           rtb_plan: 'RTB方案',
           rtb_config: 'RTB配置',
           rtb_ops: 'RTB运营',
+          category_insight: '品类洞察',
+          merchant_guide: '招商指引',
+          review_report: '复盘报告',
         };
         description = taskTypeMap[state.currentSession.currentTask.type] || '任务';
+      } else if (state.currentSession.identifiedIntent) {
+        const taskTypeMap: Record<string, string> = {
+          operation_plan: '运营方案生成',
+          budget_split: '预算拆分',
+          activity_config: '活动配置',
+          activity_ops: '活动运营',
+          rtb_plan: 'RTB方案',
+          rtb_config: 'RTB配置',
+          rtb_ops: 'RTB运营',
+          category_insight: '品类洞察',
+          merchant_guide: '招商指引',
+          review_report: '复盘报告',
+        };
+        description = taskTypeMap[state.currentSession.identifiedIntent] || state.currentSession.description || '任务';
       }
       
       const archivedSession: ConversationSession = {

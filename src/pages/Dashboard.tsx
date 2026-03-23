@@ -12,6 +12,7 @@ export default function Dashboard() {
     currentSession,
     createNewSession,
     archiveSession,
+    activeIntent,
   } = useStore();
 
   const [showRestoreModal, setShowRestoreModal] = useState(false);
@@ -62,6 +63,9 @@ export default function Dashboard() {
         rtb_plan: 'RTB方案',
         rtb_config: 'RTB配置',
         rtb_ops: 'RTB运营',
+        category_insight: '品类洞察',
+        merchant_guide: '招商指引',
+        review_report: '复盘报告',
       };
       return taskTypeMap[session.currentTask.type] || '任务会话';
     }
@@ -122,7 +126,13 @@ export default function Dashboard() {
 
         {/* 对话内容区域 */}
         <div className="flex-1 min-h-0 overflow-hidden bg-white">
-          <EnhancedAIChatBox />
+          {activeIntent ? (
+            <EnhancedAIChatBox />
+          ) : (
+            <div className="h-full flex items-center justify-center text-xs text-gray-400 px-6">
+              请选择导航栏中的 Agent，开始你的对话。
+            </div>
+          )}
         </div>
       </div>
 

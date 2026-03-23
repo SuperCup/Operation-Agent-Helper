@@ -6,9 +6,22 @@ import { agentService } from '@/services/agentService';
 import { workflowEngine } from '@/services/workflowEngine';
 import { fileService } from '@/services/fileService';
 import { documentService } from '@/services/documentService';
-import CapabilityCards from './CapabilityCards';
 import InfoCollectionModal from './InfoCollectionModal';
 import WorkflowExecutionDisplay from './WorkflowExecutionDisplay';
+
+/** Agent 意图 → 配置映射（模块级常量，避免每次渲染重建） */
+const INTENT_AGENT_MAP: Record<IntentType, { id: string; name: string; description: string }> = {
+  category_insight: { id: 'agent-0',   name: '品类洞察Agent',     description: '专门用于品类洞察分析的智能体' },
+  operation_plan:   { id: 'agent-1',   name: '运营方案生成Agent', description: '专门用于生成运营方案的智能体' },
+  merchant_guide:   { id: 'agent-1.5', name: '招商指引Agent',     description: '专门用于招商指引的智能体' },
+  budget_split:     { id: 'agent-2',   name: '预算拆分Agent',     description: '专门用于预算拆分的智能体' },
+  activity_config:  { id: 'agent-3',   name: '活动配置Agent',     description: '专门用于活动配置的智能体' },
+  activity_ops:     { id: 'agent-4',   name: '活动运营Agent',     description: '专门用于活动运营的智能体' },
+  rtb_plan:         { id: 'agent-5',   name: 'RTB方案Agent',      description: '专门用于RTB方案的智能体' },
+  rtb_config:       { id: 'agent-6',   name: 'RTB配置Agent',      description: '专门用于RTB配置的智能体' },
+  rtb_ops:          { id: 'agent-7',   name: 'RTB运营Agent',      description: '专门用于RTB运营的智能体' },
+  review_report:    { id: 'agent-8',   name: '复盘报告Agent',     description: '专门用于生成复盘报告的智能体' },
+};
 
 interface Attachment {
   id: string;
@@ -25,6 +38,9 @@ interface Props {
 export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择技能...' }: Props) {
   const {
     currentSession,
+    activeIntent,
+    pendingAgentIntent,
+    setPendingAgentIntent,
     updateSession,
     addDocumentGenerationTask,
   } = useStore();
@@ -39,11 +55,22 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 监听导航栏触发的前置表单
+  useEffect(() => {
+    if (!pendingAgentIntent) return;
+    const agentConfig = INTENT_AGENT_MAP[pendingAgentIntent];
+    if (!agentConfig) return;
+    setSelectedIntent(pendingAgentIntent);
+    setSelectedAgentId(agentConfig.id);
+    setShowInfoCollection(true);
+    setPendingAgentIntent(null);
+  }, [pendingAgentIntent, setPendingAgentIntent]);
+
   // 初始化模拟完整会话流程
   useEffect(() => {
     if (currentSession && (!currentSession.messages || currentSession.messages.length === 0)) {
       // 检查是否应该显示模拟会话（可以通过环境变量或配置控制）
-      const showDemoSession = true; // 演示模式：显示完整会话流程
+      const showDemoSession = false; // 当前：交互演示由用户选择 Agent 后触发真实流程
       
       if (showDemoSession) {
         // 模拟完整会话流程
@@ -325,17 +352,28 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
           hasActiveTask: true,
         });
       } else {
-        // 正常模式：只显示欢迎消息
-        const welcomeMessage: AgentMessage = {
-          id: 'welcome-1',
-          type: 'system',
-          content: `您好！我是小琳，您的即时零售运营AI Agent助手。
-
-我可以帮您完成以下工作，请选择您想要执行的任务：`,
-          timestamp: new Date(),
-          metadata: { showCapabilities: true },
+        const intent = (currentSession.identifiedIntent || activeIntent || 'operation_plan') as IntentType;
+        const intentLabelMap: Record<IntentType, string> = {
+          category_insight: '品类洞察',
+          operation_plan: '运营方案',
+          merchant_guide: '招商指引',
+          budget_split: '预算拆分',
+          activity_config: '活动配置',
+          activity_ops: '活动运营',
+          rtb_plan: 'RTB方案',
+          rtb_config: 'RTB配置',
+          rtb_ops: 'RTB运营',
+          review_report: '复盘报告',
         };
-        updateSession({ messages: [welcomeMessage] });
+
+        const promptMessage: AgentMessage = {
+          id: 'agent-prompt-1',
+          type: 'agent',
+          content: `已选择「${intentLabelMap[intent]}」Agent。请输入你的需求（或上传文件），我会按该方向生成对应的运营结果。`,
+          timestamp: new Date(),
+        };
+
+        updateSession({ messages: [promptMessage] });
       }
     }
   }, [currentSession?.id]);
@@ -370,6 +408,8 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
     }
   };
 
+  // intentToAgentConfigMap 已提取到模块顶层（INTENT_AGENT_MAP）
+
   const handleSend = async (message: string = input) => {
     if ((!message.trim() && attachments.length === 0) || !currentSession) return;
 
@@ -402,17 +442,39 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
     setIsTyping(true);
     updateSession({ intentStatus: 'recognizing' });
 
-    // 意图识别
-    const intentResult = await recognizeIntent(message);
+    const forcedIntent = (useStore.getState().currentSession?.identifiedIntent || activeIntent) as IntentType | null;
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsTyping(false);
 
+      // 导航栏已选择 Agent：跳过意图识别，直接按选定方向收集输入并执行工作流
+      if (forcedIntent) {
+        setSelectedIntent(forcedIntent);
+        const agentConfig = INTENT_AGENT_MAP[forcedIntent];
+        setSelectedAgentId(agentConfig.id);
+        setShowInfoCollection(true);
+
+        const latestSession = useStore.getState().currentSession;
+        const agentPrompt: AgentMessage = {
+          id: `agent-intent-known-${Date.now()}`,
+          type: 'agent',
+          content: `已切换到「${agentConfig.name}」，接下来请在弹窗中填写所需信息。`,
+          timestamp: new Date(),
+        };
+
+        useStore.getState().updateSession({
+          messages: [...(latestSession?.messages || []), agentPrompt],
+          intentStatus: 'identified',
+          identifiedIntent: forcedIntent,
+        });
+        return;
+      }
+
+      // 未选择 Agent：走意图识别逻辑
+      const intentResult = await recognizeIntent(message);
       if (intentResult.confidence < 0.7 || !intentResult.intent) {
-        // 需求模糊，显示能力介绍
         handleUnclearIntent();
       } else {
-        // 需求清晰，推荐Agent
         handleClearIntent(intentResult.intent, intentResult.summary);
       }
     }, 1500);
@@ -434,12 +496,8 @@ export default function EnhancedAIChatBox({ placeholder = '请输入或"/"选择
   };
 
   const handleClearIntent = (intent: IntentType, summary: string) => {
-    // 模拟Agent配置
-    const agentConfig = {
-      id: `agent-${intent}`,
-      name: `${summary}Agent`,
-      description: `专门用于${summary}的AI Agent`,
-    };
+    setSelectedIntent(intent);
+    const agentConfig = INTENT_AGENT_MAP[intent];
 
     const response: AgentMessage = {
       id: `agent-${Date.now()}`,
@@ -464,35 +522,6 @@ ${agentConfig.description}`,
       identifiedIntent: intent,
       recommendedAgents: [agentConfig.id],
     });
-  };
-
-  const handleCapabilitySelect = (capabilityId: IntentType | string) => {
-    // 只处理已知的IntentType
-    if (['operation_plan', 'budget_split', 'activity_config', 'activity_ops', 'rtb_plan', 'rtb_config', 'rtb_ops'].includes(capabilityId)) {
-      setSelectedIntent(capabilityId as IntentType);
-    }
-    
-    // 模拟Agent配置
-    const agentConfigMap: Record<string, { id: string; name: string; description: string }> = {
-      category_insight: { id: 'agent-0', name: '品类洞察Agent', description: '专门用于品类洞察分析的智能体' },
-      operation_plan: { id: 'agent-1', name: '运营方案生成Agent', description: '专门用于生成运营方案的智能体' },
-      merchant_guide: { id: 'agent-1.5', name: '招商指引Agent', description: '专门用于招商指引的智能体' },
-      budget_split: { id: 'agent-2', name: '预算拆分Agent', description: '专门用于预算拆分的智能体' },
-      activity_config: { id: 'agent-3', name: '活动配置Agent', description: '专门用于活动配置的智能体' },
-      activity_ops: { id: 'agent-4', name: '活动运营Agent', description: '专门用于活动运营的智能体' },
-      rtb_plan: { id: 'agent-5', name: 'RTB方案Agent', description: '专门用于RTB方案的智能体' },
-      rtb_config: { id: 'agent-6', name: 'RTB配置Agent', description: '专门用于RTB配置的智能体' },
-      rtb_ops: { id: 'agent-7', name: 'RTB运营Agent', description: '专门用于RTB运营的智能体' },
-      review_report: { id: 'agent-8', name: '复盘报告Agent', description: '专门用于生成复盘报告的智能体' },
-    };
-
-    const agentConfig = agentConfigMap[capabilityId];
-
-    if (agentConfig) {
-      setSelectedAgentId(agentConfig.id);
-      // 打开信息收集模态框
-      setShowInfoCollection(true);
-    }
   };
 
   const handleAgentSelect = (agentId: string) => {
@@ -750,8 +779,11 @@ ${agentConfig.description}`,
             type: 'agent',
             content: finalOutput?.content 
               ? `✅ 工作流执行完成！\n\n${finalOutput.content}`
-              : '✅ 工作流执行完成！您现在可以使用快捷功能生成文档。',
+              : '✅ 工作流执行完成！您现在可以生成对应文档。',
             timestamp: new Date(),
+            metadata: {
+              showDocumentGeneration: true,
+            },
           };
 
           // 更新任务，保存工作流输出
@@ -1074,13 +1106,16 @@ ${agentConfig.description}`,
 
   // 模拟Agent配置
   const agentConfigMap: Record<string, { id: string; name: string; description: string }> = {
+    'agent-0': { id: 'agent-0', name: '品类洞察Agent', description: '专门用于品类洞察分析的智能体' },
     'agent-1': { id: 'agent-1', name: '运营方案生成Agent', description: '专门用于生成运营方案的智能体' },
+    'agent-1.5': { id: 'agent-1.5', name: '招商指引Agent', description: '专门用于招商指引的智能体' },
     'agent-2': { id: 'agent-2', name: '预算拆分Agent', description: '专门用于预算拆分的智能体' },
     'agent-3': { id: 'agent-3', name: '活动配置Agent', description: '专门用于活动配置的智能体' },
     'agent-4': { id: 'agent-4', name: '活动运营Agent', description: '专门用于活动运营的智能体' },
     'agent-5': { id: 'agent-5', name: 'RTB方案Agent', description: '专门用于RTB方案的智能体' },
     'agent-6': { id: 'agent-6', name: 'RTB配置Agent', description: '专门用于RTB配置的智能体' },
     'agent-7': { id: 'agent-7', name: 'RTB运营Agent', description: '专门用于RTB运营的智能体' },
+    'agent-8': { id: 'agent-8', name: '复盘报告Agent', description: '专门用于生成复盘报告的智能体' },
   };
 
   const agentConfig = selectedAgentId ? agentConfigMap[selectedAgentId] : null;
@@ -1389,11 +1424,6 @@ ${agentConfig.description}`,
               ))}
             </div>
           )}
-
-          {/* 能力卡片 - 放在输入框上方 */}
-          <div className="mb-3">
-            <CapabilityCards onSelect={handleCapabilitySelect} />
-          </div>
 
           {/* 输入框主体 */}
           <div className="relative">

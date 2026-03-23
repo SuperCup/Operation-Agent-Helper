@@ -341,6 +341,9 @@ ${JSON.stringify(params, null, 2)}
       rtb_plan: ['rtb方案', '竞价方案', '广告方案'],
       rtb_config: ['rtb配置', '广告配置', '竞价配置'],
       rtb_ops: ['rtb运营', '广告运营', '竞价运营'],
+      category_insight: ['品类', '洞察', '趋势', '增长'],
+      merchant_guide: ['招商', '商家', '招商指引', '合作'],
+      review_report: ['复盘', '总结', '报告', '回顾'],
     };
 
     let matchedIntent: IntentType | null = null;

@@ -309,7 +309,10 @@ export type IntentType =
   | 'rtb_plan'            // RTB方案
   | 'rtb_config'          // RTB配置
   | 'activity_ops'        // 活动运营
-  | 'rtb_ops';            // RTB运营
+  | 'rtb_ops'             // RTB运营
+  | 'category_insight'   // 品类洞察
+  | 'merchant_guide'     // 招商指引
+  | 'review_report';    // 复盘报告
 
 // 任务类型
 export type TaskType = IntentType;
