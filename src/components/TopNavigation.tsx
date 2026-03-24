@@ -1,6 +1,6 @@
 import { Plus, Share2, ChevronDown, FileText, DollarSign, Settings, Activity, Target, Megaphone, BarChart3, TrendingUp, FileCheck, X, History } from 'lucide-react';
 import { useStore } from '@/store/useStore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { IntentType } from '@/types';
 
 /* ─── Agent 配置列表 ─────────────────────────── */
@@ -131,6 +131,16 @@ export default function TopNavigation() {
   // 等待确认的 Agent（inline 确认框）
   const [confirmAgent, setConfirmAgent]     = useState<{ id: IntentType; name: string } | null>(null);
 
+  // 首次进入页面自动弹出 Agent 选择框
+  const { activeIntent } = useStore();
+  useEffect(() => {
+    if (!activeIntent) {
+      setShowNewModal(true);
+    }
+  // 仅在组件挂载时执行一次
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const brands = ['达能', '嘉士伯', '康师傅', '汉高', '海天', '百威'];
   const inlineAgents = AGENTS.slice(0, MAX_INLINE);
   const moreAgents   = AGENTS.slice(MAX_INLINE);
@@ -185,21 +195,18 @@ export default function TopNavigation() {
 
   return (
     <>
-      <div className="h-12 flex-shrink-0 border-b border-gray-200 bg-white flex items-center px-4 gap-3">
+      <div className="h-12 flex-shrink-0 border-b border-gray-200 bg-white flex items-center">
 
-        {/* 左侧：Logo + 标题 */}
-        <div className="flex items-center space-x-2 flex-shrink-0">
-          <div className="w-7 h-7 bg-gray-900 rounded flex items-center justify-center">
+        {/* 左侧：Logo + 标题，固定 w-60 与历史面板对齐 */}
+        <div className="w-60 flex-shrink-0 flex items-center gap-2 pl-4 pr-3 border-r border-gray-200">
+          <div className="w-7 h-7 bg-gray-900 rounded flex items-center justify-center flex-shrink-0">
             <span className="text-white font-medium text-xs">AI</span>
           </div>
-          <h1 className="text-sm font-medium text-gray-800 whitespace-nowrap">即时零售运营AI Agent</h1>
+          <h1 className="text-sm font-medium text-gray-800 truncate">即时零售运营AI Agent</h1>
         </div>
 
-        {/* 分隔线 */}
-        <div className="w-px h-5 bg-gray-200 flex-shrink-0" />
-
         {/* 中间：Agent 快捷入口（前 MAX_INLINE 个直接显示，无选中态） */}
-        <div className="flex items-center gap-1 flex-1 overflow-hidden">
+        <div className="flex items-center gap-1 flex-1 overflow-hidden px-3">
           {inlineAgents.map((agent) => {
             const Icon = agent.icon;
             return (
@@ -249,7 +256,7 @@ export default function TopNavigation() {
         </div>
 
         {/* 右侧 */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 pr-4">
           {/* 创建新对话 → Modal */}
           <button
             onClick={() => setShowNewModal(true)}
